@@ -1,13 +1,13 @@
 <p align="center">
-  <!-- We use two SVGs here so that this displays correctly
-    on Github. This might not look right in other Markdown previewers. -->
-  <img alt="Cypress Real World App Logo" src="./src/svgs/rwa-logo-light.svg#gh-dark-mode-only" />
-  <img alt="Cypress Real World App Logo" src="./src/svgs/rwa-logo.svg#gh-light-mode-only" />
+  <!-- Se utilizan dos SVG para que el logotipo se muestre correctamente
+    en GitHub. El resultado puede variar en otros visores de Markdown. -->
+  <img alt="Logotipo de Cypress Real World App" src="./src/svgs/rwa-logo-light.svg#gh-dark-mode-only" />
+  <img alt="Logotipo de Cypress Real World App" src="./src/svgs/rwa-logo.svg#gh-light-mode-only" />
 </p>
 
 <p align="center">
   <a href="https://cypress.io">
-    <img width="140" alt="Cypress Logo" src="./src/svgs/built-by-cypress.svg" />
+    <img width="140" alt="Logotipo de Cypress" src="./src/svgs/built-by-cypress.svg" />
     </a>
 </p>
 
@@ -24,105 +24,106 @@
     <img src="https://percy.io/static/images/percy-badge.svg" />
   </a>
 
-   <a href="#contributors-">
+   <a href="#colaboradores-">
     <img src="https://img.shields.io/badge/all_contributors-6-green.svg?style=flat" />
   </a>
 </p>
 
 <p align="center">
-A payment application to demonstrate <strong>real-world</strong> usage of <a href="https://cypress.io">Cypress</a> testing methods, patterns, and workflows.
+Aplicación de pagos que demuestra el uso de métodos, patrones y flujos de trabajo de pruebas con <a href="https://cypress.io">Cypress</a> en un entorno <strong>realista</strong>.
 </p>
 
 <p align="center">
-  <img style='width: 70%' alt="Cypress Real World App" src="./public/img/rwa-readme-screenshot.png" />
+  <img style='width: 70%' alt="Interfaz de Cypress Real World App" src="./public/img/rwa-readme-screenshot.png" />
 </p>
 
-> 💬 **Note from maintainers**
+> 💬 **Nota de los mantenedores**
 >
-> This application is purely for demonstration and educational purposes. Its setup and configuration resemble typical real-world applications, but it's not a full-fledged production system. Use this app to learn, experiment, tinker, and practice application testing with Cypress.
+> Esta aplicación se ofrece exclusivamente con fines educativos y demostrativos. Su estructura y configuración se asemejan a las de una aplicación real, pero no constituye un sistema de producción completo. Puede utilizarse para aprender, experimentar y practicar pruebas de aplicaciones con Cypress.
 >
-> Happy Testing!
+> ¡Felices pruebas!
+
+Esta versión conserva el código del [proyecto original de Cypress](https://github.com/cypress-io/cypress-realworld-app) y adapta su documentación al español con fines académicos.
 
 ---
 
-## Features
+## Características
 
-🛠 Built with [React][reactjs], [XState][xstate], [Express][express], [lowdb][lowdb], [Material-UI][material-ui] and [TypeScript][typescript]
-⚡️ Zero database dependencies
-🚀 Full-stack [Express][express]/[React][reactjs] application with real-world features and tests
-👮‍♂️ Local Authentication
-🔥 Database Seeding with End-to-end Tests
+🛠 Construida con [React][reactjs], [XState][xstate], [Express][express], [lowdb][lowdb], [Material-UI][material-ui] y [TypeScript][typescript]
+⚡️ Sin dependencias de un servidor de base de datos
+🚀 Aplicación *full stack* [Express][express]/[React][reactjs] con funciones y pruebas realistas
+👮‍♂️ Autenticación local
+🔥 Inicialización de datos integrada con las pruebas de extremo a extremo
 💻 CI/CD + [Cypress Cloud][cypresscloud]
 
-## Getting Started
+## Primeros pasos
 
-The Cypress Real-World App (RWA) is a full-stack Express/React application backed by a local JSON database ([lowdb]).
+Cypress Real World App (RWA) es una aplicación *full stack* Express/React respaldada por una base de datos JSON local administrada con [lowdb].
 
-The app is bundled with [example data](./data/database.json) (`data/database.json`) that contains everything you need to start using the app and run tests out-of-the-box.
+La aplicación incluye [datos de ejemplo](./data/database.json) en `data/database.json`, con lo necesario para utilizarla y ejecutar las pruebas desde el primer momento.
 
-> 🚩 **Note**
+> 🚩 **Nota**
 >
-> You can login to the app with any of the [example app users](./data/database.json#L2). The default password for all users is `s3cret`.
-> Example users can be seen by running `yarn list:dev:users`.
+> Es posible iniciar sesión con cualquiera de los [usuarios de ejemplo](./data/database.json#L2). La contraseña predeterminada para todos ellos es `s3cret`.
+> Para consultar la lista de usuarios de desarrollo, ejecute `yarn list:dev:users`.
 
-### Prerequisites
+### Requisitos previos
 
-This project requires [Node.js](https://nodejs.org/en/) to be installed on your machine. Refer to the [.node-version](./.node-version) file for the exact version.
+Este proyecto requiere [Node.js](https://nodejs.org/en/). Consulte el archivo [.node-version](./.node-version) para conocer la versión exacta.
 
-[Yarn Classic](https://classic.yarnpkg.com/) is also required. Once you have [Node.js](https://nodejs.org/en/) installed, execute the following to install the npm module [yarn](https://www.npmjs.com/package/yarn) (Classic - version 1) globally.
+También se requiere [Yarn Classic](https://classic.yarnpkg.com/). Después de instalar [Node.js](https://nodejs.org/en/), ejecute el siguiente comando para instalar globalmente el módulo npm [yarn](https://www.npmjs.com/package/yarn), versión 1:
 
 ```shell
 npm install yarn@1 -g
 ```
 
-If you have Node.js' experimental [Corepack](https://nodejs.org/dist/latest/docs/api/corepack.html) feature enabled,
-then you should skip the step `npm install yarn@1 -g` to install Yarn Classic globally.
-The RWA project is locally configured for `Corepack` to use Yarn Classic (version 1).
+Si la función experimental [Corepack](https://nodejs.org/dist/latest/docs/api/corepack.html) de Node.js está habilitada, omita el comando `npm install yarn@1 -g`.
+El proyecto RWA ya configura `Corepack` para utilizar Yarn Classic, versión 1.
 
-#### Yarn Modern
+#### Yarn moderno
 
-**This project is not compatible with [Yarn Modern](https://yarnpkg.com/) (version 2 and later).**
+**Este proyecto no es compatible con [Yarn moderno](https://yarnpkg.com/) (versión 2 o posterior).**
 
-### Installation
+### Instalación
 
-To clone the repo to your local system and install dependencies, execute the following commands:
+Para clonar el repositorio e instalar las dependencias, ejecute:
 
 ```shell
-git clone https://github.com/cypress-io/cypress-realworld-app
+git clone https://github.com/somefirenoodles/CYPRESSX
 cd cypress-realworld-app
 yarn
 ```
 
-#### Mac users with M-series chips will need to prepend `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true`.
+#### En equipos Mac con procesadores de la serie M, agregue `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true` al inicio del comando.
 
 ```shell
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true yarn install
 ```
 
-### Run the app
+### Ejecutar la aplicación
 
 ```shell
 yarn dev
 ```
 
-> 🚩 **Note**
+> 🚩 **Nota**
 >
-> The app will run on port `3000` (frontend) and `3001` (API backend) by default. Please make sure there are no other applications or services running on both ports.
-> If you want to change the default ports, you can do so by modifying `PORT` and `VITE_BACKEND_PORT` variables in `.env` file.
-> However, make sure the modified port numbers in `.env` are not committed into Git since the CI environments still expect the application to run on the default ports.
+> De forma predeterminada, la aplicación utiliza el puerto `3000` para el *frontend* y el puerto `3001` para la API. Verifique que ningún otro servicio esté utilizando esos puertos.
+> Para cambiar los puertos, modifique las variables `PORT` y `VITE_BACKEND_PORT` del archivo `.env`.
+> No confirme en Git los cambios de puertos realizados en `.env`, porque los entornos de integración continua esperan los valores predeterminados.
 
-### Start Cypress
+### Iniciar Cypress
 
 ```shell
 yarn cypress:open
 ```
 
-> 🚩 **Note**
+> 🚩 **Nota**
 >
-> If you have changed the default ports, then you need to update Cypress configuration file (`cypress.config.ts`) locally.
-> There are three properties that you need to update in `cypress.config.ts`: `e2e.baseUrl`, `expose.apiUrl`, and `expose.codeCoverage.url`.
-> The port number in `e2e.baseUrl` corresponds to `PORT` variable in `.env` file. Similarly, the port number in `expose.apiUrl` and `expose.codeCoverage.url` correspond to `VITE_BACKEND_PORT`.
-> For example, if you have changed `PORT` to `13000` and `VITE_BACKEND_PORT` to `13001` in `.env` file, then your `cypress.config.ts` should look similar to the following snippet:
+> Si modifica los puertos predeterminados, también debe actualizar localmente el archivo `cypress.config.ts`.
+> Las propiedades que requieren cambios son `e2e.baseUrl`, `expose.apiUrl` y `expose.codeCoverage.url`.
+> El puerto de `e2e.baseUrl` corresponde a `PORT` en `.env`. Los puertos de `expose.apiUrl` y `expose.codeCoverage.url` corresponden a `VITE_BACKEND_PORT`.
+> Por ejemplo, si establece `PORT` en `13000` y `VITE_BACKEND_PORT` en `13001`, `cypress.config.ts` debe contener una configuración similar a esta:
 >
 > ```js
 > {
@@ -138,63 +139,67 @@ yarn cypress:open
 > }
 > ```
 >
-> Avoid committing the modified `cypress.config.ts` into Git since the CI environments still expect the application to be run on default ports.
+> No confirme en Git este cambio de `cypress.config.ts`, porque los entornos de integración continua esperan los puertos predeterminados.
 
-## Tests
+## Casos de uso
 
-| Type      | Location                                 |
+El repositorio incluye una [especificación de ocho casos de uso](./CASOS_DE_USO.md), con actores, precondiciones, postcondiciones, flujos principales, alternativas y trazabilidad hacia las pruebas automatizadas.
+
+## Pruebas
+
+| Tipo      | Ubicación                                |
 | --------- | ---------------------------------------- |
-| api       | [cypress/tests/api](./cypress/tests/api) |
-| ui        | [cypress/tests/ui](./cypress/tests/ui)   |
-| component | [src/(next to component)](./src)         |
-| unit      | [`src/__tests__`](./src/__tests__)       |
+| API       | [cypress/tests/api](./cypress/tests/api) |
+| Interfaz  | [cypress/tests/ui](./cypress/tests/ui)   |
+| Componente | [src/(junto al componente)](./src)      |
+| Unitaria  | [`src/__tests__`](./src/__tests__)       |
 
-## Database
+## Base de datos
 
-- The local JSON database is located in [data/database.json](./data/database.json) and is managed with [lowdb].
+- La base de datos JSON local está en [data/database.json](./data/database.json) y se administra con [lowdb].
 
-- The database is [reseeded](./data/database-seed.json) each time the application is started (via `yarn dev`). Database seeding is done in between each [Cypress End-to-End test](./cypress/tests).
+- La base de datos se [reinicializa](./data/database-seed.json) cada vez que la aplicación se inicia mediante `yarn dev`. También se reinicializa entre las [pruebas de extremo a extremo de Cypress](./cypress/tests).
 
-- Updates via the React frontend are sent to the [Express][express] server and handled by a set of [database utilities](backend/database.ts)
+- Las actualizaciones realizadas desde el *frontend* React se envían al servidor [Express][express] y son procesadas por las [utilidades de base de datos](backend/database.ts).
 
-- Generate a new database using `yarn db:seed`.
+- Para generar una base de datos nueva, ejecute `yarn db:seed`.
 
-- An [empty database seed](./data/empty-seed.json) is provided along with a script (`yarn start:empty`) to view the application without data.
+- El proyecto incluye una [semilla vacía](./data/empty-seed.json) y el comando `yarn start:empty` para ejecutar la aplicación sin datos.
 
-## Additional NPM Scripts
+## Comandos NPM adicionales
 
-| Script         | Description                                                                                                                                                                       |
+| Comando        | Descripción                                                                                                                                                                       |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| dev            | Starts backend in watch mode and frontend                                                                                                                                         |
-| dev:coverage   | Starts backend in watch mode and frontend with instrumented code coverage enabled                                                                                                 |
-| dev:auth0      | Starts backend in watch mode and frontend; [Uses Auth0 for Authentication](#auth0) > [Read Guide](http://on.cypress.io/auth0)                                                     |
-| dev:okta       | Starts backend in watch mode and frontend; [Uses Okta for Authentication](#okta) > [Read Guide](http://on.cypress.io/okta)                                                        |
-| dev:cognito    | Starts backend in watch mode and frontend; [Uses Cognito for Authentication](#amazon-cognito) > [Read Guide](http://on.cypress.io/amazon-cognito)                                 |
-| dev:google     | Starts backend in watch mode and frontend; [Uses Google for Authentication](#google) > [Read Guide](https://docs.cypress.io/guides/testing-strategies/google-authentication.html) |
-| start          | Starts backend and frontend                                                                                                                                                       |
-| types          | Validates types                                                                                                                                                                   |
-| db:seed        | Generates fresh database seeds for json files in /data                                                                                                                            |
-| start:empty    | Starts backend, frontend and Cypress with empty database seed                                                                                                                     |
-| tsnode         | Customized ts-node command to get around react-scripts restrictions                                                                                                               |
-| list:dev:users | Provides id and username for users in the dev database                                                                                                                            |
+| dev            | Inicia el *backend* en modo de observación y el *frontend*.                                                                                                                       |
+| dev:coverage   | Inicia el *backend* en modo de observación y el *frontend* con instrumentación de cobertura.                                                                                      |
+| dev:auth0      | Inicia el *backend* y el *frontend* con [autenticación Auth0](#auth0). [Consultar guía](http://on.cypress.io/auth0).                                                              |
+| dev:okta       | Inicia el *backend* y el *frontend* con [autenticación Okta](#okta). [Consultar guía](http://on.cypress.io/okta).                                                                 |
+| dev:cognito    | Inicia el *backend* y el *frontend* con [autenticación Cognito](#amazon-cognito). [Consultar guía](http://on.cypress.io/amazon-cognito).                                          |
+| dev:google     | Inicia el *backend* y el *frontend* con [autenticación Google](#google). [Consultar guía](https://docs.cypress.io/guides/testing-strategies/google-authentication.html).           |
+| start          | Inicia el *backend* y el *frontend*.                                                                                                                                              |
+| types          | Valida los tipos.                                                                                                                                                                 |
+| db:seed        | Genera nuevas semillas de base de datos para los archivos JSON de `/data`.                                                                                                        |
+| start:empty    | Inicia el *backend*, el *frontend* y Cypress con una base de datos vacía.                                                                                                          |
+| tsnode         | Comando `ts-node` personalizado para evitar las restricciones de `react-scripts`.                                                                                                 |
+| list:dev:users | Muestra el identificador y el nombre de usuario de las cuentas de desarrollo.                                                                                                     |
 
-For a complete list of scripts see [package.json](./package.json)
+Consulte [package.json](./package.json) para ver la lista completa de comandos.
 
-## Code Coverage Report
+## Informe de cobertura de código
 
-The Cypress Real-World App uses the [@cypress/code-coverage](https://github.com/cypress-io/code-coverage) plugin to generate code coverage reports for the app frontend and backend.
+Cypress Real World App utiliza el complemento [@cypress/code-coverage](https://github.com/cypress-io/code-coverage) para generar informes de cobertura del *frontend* y el *backend*.
 
-To generate a code coverage report:
+Para generar el informe:
 
-1. Start the development server with coverage enabled by running `yarn dev:coverage`.
-2. Run `yarn cypress:run --env coverage=true` and wait for the test run to complete.
-3. Once the test run is complete, you can view the report at `coverage/index.html`.
+1. Inicie el servidor de desarrollo con cobertura mediante `yarn dev:coverage`.
+2. Ejecute `yarn cypress:run --env coverage=true` y espere a que finalicen las pruebas.
+3. Abra el informe generado en `coverage/index.html`.
 
-## 3rd Party Authentication Providers
+## Proveedores de autenticación externos
 
-Support for 3rd party authentication is available in the application to demonstrate the concepts on logging in with a 3rd party provider.
+La aplicación admite autenticación mediante proveedores externos para demostrar este tipo de inicio de sesión.
 
-The app contains different entry points for each provider. There is a separate **index** file for each provider, and to use one, you must replace the current **index.tsx** file with the desired one. The following providers are supported:
+Cada proveedor posee un punto de entrada independiente. Para utilizarlo, reemplace el archivo **index.tsx** actual por el archivo correspondiente. Se admiten los siguientes proveedores:
 
 - [Auth0](#auth0) (index.auth0.tsx)
 - [Okta](#okta) (index.okta.tsx)
@@ -203,68 +208,68 @@ The app contains different entry points for each provider. There is a separate *
 
 ### Auth0
 
-The [Auth0](https://auth0.com/) tests have been rewritten to take advantage of our [`cy.session`](https://docs.cypress.io/api/commands/session) and [`cy.origin`](https://docs.cypress.io/api/commands/origin) commands.
+Las pruebas de [Auth0](https://auth0.com/) utilizan los comandos [`cy.session`](https://docs.cypress.io/api/commands/session) y [`cy.origin`](https://docs.cypress.io/api/commands/origin).
 
-Prerequisites include an Auth0 account and a Tenant configured for use with a SPA. Environment variables from Auth0 are to be placed in the [.env](./.env). For more details see [Auth0 Application Setup](http://on.cypress.io/auth0#Auth0-Application-Setup) and [Setting Auth0 app credentials in Cypress](http://on.cypress.io/auth0#Setting-Auth0-app-credentials-in-Cypress).
+Se requiere una cuenta Auth0 y un *tenant* configurado para una aplicación de página única (SPA). Las variables de entorno de Auth0 deben declararse en [.env](./.env). Consulte la [configuración de una aplicación Auth0](http://on.cypress.io/auth0#Auth0-Application-Setup) y la [configuración de credenciales Auth0 en Cypress](http://on.cypress.io/auth0#Setting-Auth0-app-credentials-in-Cypress).
 
-To start the application with Auth0, replace the current **src/index.tsx** file with the **src/index.auth0.tsx** file and start the application with `yarn dev:auth0` and run Cypress with `yarn cypress:open`.
+Para iniciar la aplicación con Auth0, reemplace **src/index.tsx** por **src/index.auth0.tsx**, ejecute `yarn dev:auth0` y abra Cypress mediante `yarn cypress:open`.
 
-The only passing spec on this branch will be the [auth0 spec](./cypress/tests/ui-auth-providers/auth0.spec.ts); all others will fail. Please note that your test user will need to authorize your Auth0 app before the tests will pass.
+En esta configuración solo aprobará la [especificación de Auth0](./cypress/tests/ui-auth-providers/auth0.spec.ts); las demás fallarán. El usuario de prueba debe autorizar previamente la aplicación Auth0.
 
 ### Okta
 
-A [guide has been written with detail around adapting the RWA](http://on.cypress.io/okta) to use [Okta][okta] and to explain the programmatic command used for Cypress tests.
+La [guía de adaptación de RWA](http://on.cypress.io/okta) explica cómo utilizar [Okta][okta] y describe el comando de autenticación programática empleado en las pruebas de Cypress.
 
-Prerequisites include an [Okta][okta] account and [application configured for use with a SPA][oktacreateapp]. Environment variables from [Okta][okta] are to be placed in the [.env](./.env).
+Se requiere una cuenta de [Okta][okta] y una [aplicación configurada como SPA][oktacreateapp]. Las variables de entorno de Okta deben declararse en [.env](./.env).
 
-To start the application with Okta, replace the current **src/index.tsx** file with the **src/index.okta.tsx** file and start the application with `yarn dev:okta` and run Cypress with `yarn cypress:open`.
+Para iniciar la aplicación con Okta, reemplace **src/index.tsx** por **src/index.okta.tsx**, ejecute `yarn dev:okta` y abra Cypress mediante `yarn cypress:open`.
 
-The **only passing spec on this branch** will be the [okta spec](./cypress/tests/ui-auth-providers/okta.spec.ts); all others will fail.
+En esta configuración **solo aprobará** la [especificación de Okta](./cypress/tests/ui-auth-providers/okta.spec.ts); las demás fallarán.
 
 ### Amazon Cognito
 
-A [guide has been written with detail around adapting the RWA](http://on.cypress.io/amazon-cognito) to use [Amazon Cognito][cognito] as the authentication solution and to explain the programmatic command used for Cypress tests.
+La [guía de adaptación de RWA](http://on.cypress.io/amazon-cognito) explica cómo utilizar [Amazon Cognito][cognito] como solución de autenticación y describe el comando programático empleado en las pruebas de Cypress.
 
-Prerequisites include an [Amazon Cognito][cognito] account. Environment variables from [Amazon Cognito][cognito] are provided by the [AWS Amplify CLI][awsamplify].
+Se requiere una cuenta de [Amazon Cognito][cognito]. La [CLI de AWS Amplify][awsamplify] proporciona las variables de entorno de Cognito.
 
-- A user pool is required (identity pool is not used here)
-  - The user pool must have a hosted UI domain configured, which must:
-    - allow callback and sign-out URLs of `http://localhost:3000/`,
-    - allow implicit grant Oauth grant type,
-    - allow these OpenID Connect scopes:
+- Se requiere un grupo de usuarios; esta configuración no utiliza grupos de identidades.
+  - El grupo de usuarios debe tener configurado un dominio de interfaz alojada que:
+    - admita `http://localhost:3000/` como URL de retorno y cierre de sesión;
+    - admita el tipo de concesión implícita de OAuth;
+    - admita los siguientes alcances de OpenID Connect:
       - aws.cognito.signin.user.admin
       - email
       - openid
-  - The user pool must have an app client configured, with:
-    - enabled auth flow `ALLOW_USER_PASSWORD_AUTH`, only for programmatic login flavor of test.
-    - The `cy.origin()` flavor of test only requires auth flow `ALLOW_USER_SRP_AUTH`, and does not require `ALLOW_USER_PASSWORD_AUTH`.
-  - The user pool must have a user corresponding to the `AWS_COGNITO` env vars mentioned below, and the user's Confirmation Status must be `Confirmed`. If it is `Force Reset Password`, then use a browser to log in once at `http://localhost:3000` while `yarn dev:cognito` is running to reset their password.
+  - El grupo debe tener configurado un cliente de aplicación con:
+    - el flujo `ALLOW_USER_PASSWORD_AUTH` habilitado únicamente para la variante de inicio de sesión programático;
+    - el flujo `ALLOW_USER_SRP_AUTH` para la variante basada en `cy.origin()`, que no requiere `ALLOW_USER_PASSWORD_AUTH`.
+  - Debe existir un usuario que corresponda a las variables de entorno `AWS_COGNITO`, con estado de confirmación `Confirmed`. Si su estado es `Force Reset Password`, inicie sesión una vez en `http://localhost:3000` mientras se ejecuta `yarn dev:cognito` para restablecer la contraseña.
 
-The test knobs are in a few places:
+La configuración de las pruebas se distribuye entre los siguientes archivos:
 
-- The `.env` file has `VITE_AUTH_TOKEN_NAME` and vars beginning `AWS_COGNITO`. Be careful not to commit any secrets.
-- Both `scripts/mock-aws-exports.js` and `scripts/mock-aws-exports-es5.js` must have the same data; only their export statements differ. These files can be edited manually or exported from the amplify CLI.
-- `cypress.config.ts` has `cognito_programmatic_login` to control flavor of the test.
+- `.env` contiene `VITE_AUTH_TOKEN_NAME` y variables cuyo nombre comienza por `AWS_COGNITO`. No confirme secretos en Git.
+- `scripts/mock-aws-exports.js` y `scripts/mock-aws-exports-es5.js` deben contener los mismos datos; solo difieren sus declaraciones de exportación. Pueden editarse manualmente o generarse mediante la CLI de Amplify.
+- `cypress.config.ts` contiene `cognito_programmatic_login`, que controla la variante de la prueba.
 
-To start the application with Cognito, replace the current **src/index.tsx** file with the **src/index.cognito.tsx** file and start the application with `yarn dev:cognito` and run Cypress with `yarn cypress:open`. `yarn dev` may need to have been run once first.
+Para iniciar la aplicación con Cognito, reemplace **src/index.tsx** por **src/index.cognito.tsx**, ejecute `yarn dev:cognito` y abra Cypress mediante `yarn cypress:open`. Puede ser necesario ejecutar `yarn dev` previamente.
 
-The **only passing spec on this branch** will be the [cognito spec](./cypress/tests/ui-auth-providers/cognito.spec.ts); all others will fail.
+En esta configuración **solo aprobará** la [especificación de Cognito](./cypress/tests/ui-auth-providers/cognito.spec.ts); las demás fallarán.
 
 ### Google
 
-A [guide has been written with detail around adapting the RWA](https://docs.cypress.io/guides/testing-strategies/google-authentication.html) to use [Google][google] as the authentication solution and to explain the programmatic command used for Cypress tests.
+La [guía de adaptación de RWA](https://docs.cypress.io/guides/testing-strategies/google-authentication.html) explica cómo utilizar [Google][google] como solución de autenticación y describe el comando programático empleado en las pruebas de Cypress.
 
-Prerequisites include an [Google][google] account. Environment variables from [Google][google] are to be placed in the [.env](./.env).
+Se requiere una cuenta de [Google][google]. Las variables de entorno de Google deben declararse en [.env](./.env).
 
-To start the application with Google, replace the current **src/index.tsx** file with the **src/index.google.tsx** file and start the application with `yarn dev:google` and run Cypress with `yarn cypress:open`.
+Para iniciar la aplicación con Google, reemplace **src/index.tsx** por **src/index.google.tsx**, ejecute `yarn dev:google` y abra Cypress mediante `yarn cypress:open`.
 
-The **only passing spec** when run with `yarn dev:google` will be the [google spec](./cypress/tests/ui-auth-providers/google.spec.ts); all others will fail.
+Al ejecutar `yarn dev:google`, **solo aprobará** la [especificación de Google](./cypress/tests/ui-auth-providers/google.spec.ts); las demás fallarán.
 
-## License
+## Licencia
 
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/cypress-io/cypress/blob/master/LICENSE)
 
-This project is licensed under the terms of the [MIT license](/LICENSE).
+Este proyecto se distribuye conforme a los términos de la [licencia MIT](/LICENSE).
 
 [reactjs]: https://reactjs.org
 [xstate]: https://xstate.js.org
@@ -280,9 +285,9 @@ This project is licensed under the terms of the [MIT license](/LICENSE).
 [awsamplify]: https://amplify.aws
 [google]: https://google.com
 
-## Contributors ✨
+## Colaboradores ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+Agradecemos a las siguientes personas ([guía de emojis](https://allcontributors.org/docs/en/emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -303,4 +308,4 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!!
+Este proyecto sigue la especificación [all-contributors](https://github.com/all-contributors/all-contributors). Se aceptan contribuciones de cualquier tipo.
