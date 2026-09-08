@@ -16,8 +16,6 @@ import {
   IconButton,
   Badge,
   Button,
-  useTheme,
-  useMediaQuery,
   Link,
 } from "@mui/material";
 import {
@@ -29,11 +27,8 @@ import { Link as RouterLink, useLocation } from "react-router-dom";
 
 import { DataContext, DataEvents, DataSchema } from "../machines/dataMachine";
 import TransactionNavTabs from "./TransactionNavTabs";
-import RWALogo from "./SvgRwaLogo";
-import RWALogoIcon from "./SvgRwaIconLogo";
 
 const drawerWidth = 240;
-
 const PREFIX = "NavBar";
 
 const classes = {
@@ -48,17 +43,13 @@ const classes = {
 };
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
-  [`& .${classes.toolbar}`]: {
-    paddingRight: 24, // keep right padding when drawer closed
-  },
-
+  [`& .${classes.toolbar}`]: { paddingRight: 24 },
   [`&.${classes.appBar}`]: {
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
     }),
   },
-
   [`&.${classes.appBarShift}`]: {
     marginLeft: drawerWidth,
     width: `calc(100% - ${drawerWidth}px)`,
@@ -67,21 +58,13 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
       duration: theme.transitions.duration.enteringScreen,
     }),
   },
-
-  [`& .${classes.menuButtonHidden}`]: {
-    display: "none",
-  },
-
-  [`& .${classes.title}`]: {
-    flexGrow: 1,
-    textAlign: "center",
-  },
-
+  [`& .${classes.menuButtonHidden}`]: { display: "none" },
+  [`& .${classes.title}`]: { flexGrow: 1, textAlign: "center" },
   [`& .${classes.logo}`]: {
     color: "white",
-    verticalAlign: "bottom",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
   },
-
   [`& .${classes.newTransactionButton}`]: {
     fontSize: 16,
     backgroundColor: "#00C853",
@@ -95,11 +78,7 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
       boxShadow: "none",
     },
   },
-
-  [`& .${classes.customBadge}`]: {
-    backgroundColor: "red",
-    color: "white",
-  },
+  [`& .${classes.customBadge}`]: { backgroundColor: "red", color: "white" },
 }));
 
 interface NavBarProps {
@@ -116,18 +95,11 @@ interface NavBarProps {
 
 const NavBar: React.FC<NavBarProps> = ({ drawerOpen, toggleDrawer, notificationsService }) => {
   const match = useLocation();
-
-  const theme = useTheme();
   const [notificationsState] = useActor(notificationsService);
-
   const allNotifications = notificationsState?.context?.results;
-  const xsBreakpoint = useMediaQuery(theme.breakpoints.only("xs"));
 
   return (
-    <StyledAppBar
-      position="absolute"
-      className={clsx(classes.appBar, drawerOpen && classes.appBarShift)}
-    >
+    <StyledAppBar position="absolute" className={clsx(classes.appBar, drawerOpen && classes.appBarShift)}>
       <Toolbar className={classes.toolbar}>
         <IconButton
           data-test="sidenav-toggle"
@@ -139,56 +111,21 @@ const NavBar: React.FC<NavBarProps> = ({ drawerOpen, toggleDrawer, notifications
         >
           <MenuIcon data-test="drawer-icon" />
         </IconButton>
-        <Typography
-          component="h1"
-          variant="h6"
-          color="inherit"
-          noWrap
-          className={classes.title}
-          data-test="app-name-logo"
-        >
-          <Link
-            to="/"
-            style={{ color: "#fff", textDecoration: "none" }}
-            component={RouterLink}
-            underline="hover"
-          >
-            {xsBreakpoint ? (
-              <RWALogoIcon className={classes.logo} />
-            ) : (
-              <RWALogo className={classes.logo} />
-            )}
+        <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title} data-test="app-name-logo">
+          <Link to="/" style={{ color: "#fff", textDecoration: "none" }} component={RouterLink} underline="hover">
+            <span className={classes.logo}>AASP</span>
           </Link>
         </Typography>
-        <Button
-          className={classes.newTransactionButton}
-          variant="contained"
-          color="inherit"
-          component={RouterLink}
-          to="/transaction/new"
-          data-test="nav-top-new-transaction"
-        >
+        <Button className={classes.newTransactionButton} variant="contained" color="inherit" component={RouterLink} to="/transaction/new" data-test="nav-top-new-transaction">
           <AttachMoneyIcon /> New
         </Button>
-        <IconButton
-          color="inherit"
-          component={RouterLink}
-          to="/notifications"
-          data-test="nav-top-notifications-link"
-          size="large"
-        >
-          <Badge
-            badgeContent={allNotifications ? allNotifications.length : undefined}
-            data-test="nav-top-notifications-count"
-            classes={{ badge: classes.customBadge }}
-          >
+        <IconButton color="inherit" component={RouterLink} to="/notifications" data-test="nav-top-notifications-link" size="large">
+          <Badge badgeContent={allNotifications ? allNotifications.length : undefined} data-test="nav-top-notifications-count" classes={{ badge: classes.customBadge }}>
             <NotificationsIcon />
           </Badge>
         </IconButton>
       </Toolbar>
-      {(match.pathname === "/" || RegExp("/(?:public|contacts|personal)").test(match.pathname)) && (
-        <TransactionNavTabs />
-      )}
+      {(match.pathname === "/" || RegExp("/(?:public|contacts|personal)").test(match.pathname)) && <TransactionNavTabs />}
     </StyledAppBar>
   );
 };
