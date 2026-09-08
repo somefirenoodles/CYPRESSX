@@ -95,8 +95,8 @@ if (process.env.VITE_GOOGLE) {
   app.use(checkGoogleJwt);
 }
 
-app.get("/", (req, res) => {
-  res.send("Cypress Realworld App - backend");
+app.get("/", (_req, res) => {
+  res.send("Superpay - backend académico");
 });
 app.use("/graphql", gqlPlaygroundRoutes);
 app.use(
