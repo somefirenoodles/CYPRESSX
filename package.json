@@ -1,15 +1,15 @@
 {
-  "name": "cypress-realworld-app",
+  "name": "superpay",
   "version": "1.0.0",
-  "description": "A payment application to demonstrate **real-world** usage of Cypress testing methods, patterns, and workflows. For a full reference of our documentation, go to https://docs.cypress.io",
+  "description": "Aplicación académica de pagos para prácticas reproducibles de pruebas, mantenimiento y aseguramiento de la calidad de software.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cypress-io/cypress-realworld-app.git"
+    "url": "https://github.com/somefirenoodles/CYPRESSX.git"
   },
-  "author": "Cypress-io",
+  "author": "Cypress.io contributors; adaptación académica Superpay",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/cypress-io/cypress-realworld-app/issues"
+    "url": "https://github.com/somefirenoodles/CYPRESSX/issues"
   },
   "dependencies": {
     "@auth0/auth0-react": "2.2.4",
@@ -149,14 +149,14 @@
     "predev:cognito:ci": "yarn copy:mock:awsexports && yarn copy:mock:awsexportses5",
     "copy:mock:awsexports": "ncp scripts/mock-aws-exports.js src/aws-exports.js",
     "copy:mock:awsexportses5": "ncp scripts/mock-aws-exports-es5.js aws-exports-es5.js",
-    "build:aws-exports-es5": "cross-env tsc --skipLibCheck --allowJs --lib 'es5' --module 'commonjs' --target 'es5' --moduleResolution 'node' --outDir . src/aws-exports.js; mv aws-exports.js aws-exports-es5.js",
+    "build:aws-exports-es5": "cross-env tsc --skipLibCheck --allowJs --lib es5 --module commonjs --target es5 --moduleResolution node --outDir . src/aws-exports.js && node -e \"require('fs').renameSync('aws-exports.js','aws-exports-es5.js')\"",
     "start": "cross-env NODE_ENV=development concurrently yarn:start:react yarn:start:api",
     "start:ci": "cross-env NODE_ENV=test concurrently yarn:start:react:proxy-server yarn:start:api",
     "prestart:ci": "yarn predev:cognito:ci",
     "start:react": "vite",
     "start:empty": "cross-env NODE_ENV=development EMPTY_SEED=true concurrently yarn:start:react yarn:start:api:watch",
     "lint": "eslint && prettier --check \"**/**.{ts,js,tsx}\" \"*.{json,md,yml}\"",
-    "list:dev:users": "cat data/database.json | json -a users | json -a id username",
+    "list:dev:users": "node -e \"const d=require('./data/database.json'); console.table(d.users.map(({id,username})=>({id,username})))\"",
     "types": "tsc --noEmit",
     "precypress:open": "yarn predev:cognito:ci",
     "cypress:open": "cypress open",
@@ -193,7 +193,7 @@
     "postinstall": "husky install && patch-package"
   },
   "engines": {
-    "node": "^22.0.0 || ^24.0.0"
+    "node": "22.20.x || 24.x"
   },
   "husky": {
     "hooks": {
