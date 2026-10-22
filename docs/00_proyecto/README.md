@@ -43,6 +43,16 @@ Se excluyen temporalmente de esta iteración:
 
 Las exclusiones no eliminan esos módulos del proyecto. Solo posponen su documentación detallada para una capa posterior.
 
+## Ampliación documental — iteración 2 (propuesta)
+
+La segunda capa incorpora **ocho casos de uso adicionales** y sus requisitos y escenarios de prueba. Estos documentos **no** certifican que las funcionalidades o pruebas estén aprobadas ni implementadas. La funcionalidad de división de gastos está pendiente de desarrollo, y las operaciones de altas/bajas de contactos requieren validación de cobertura.
+
+- [Casos de uso de ampliación](../01_requisitos/casos-uso-ampliacion.md): CU-AUT-01, CU-AUT-02, CU-TX-04, CU-TX-05, CU-CTA-01, CU-CON-01, CU-GAS-01 y CU-NOT-01.
+- [Requisitos de ampliación](../01_requisitos/requisitos-ampliacion.md): ocho requisitos con criterios de aceptación y trazabilidad.
+- [Escenarios de prueba](../02_pruebas/escenarios-ampliacion.md): dieciséis escenarios propuestos, todos sin ejecución documentada.
+
+La documentación de la **iteración 1** y los defectos reservados permanecen vigentes. La implementación o corrección de funciones exige tareas y pruebas separadas.
+
 ## Principio de preservación de defectos
 
 Los defectos funcionales seleccionados para prácticas de mantenimiento deben conservarse hasta que una actividad explícita requiera corregirlos.
