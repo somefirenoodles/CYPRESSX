@@ -81,7 +81,7 @@
 - **Aceptación:** búsqueda sin exposición de datos privados y asociaciones sin duplicados. **Se debe comprobar la existencia real de altas/bajas antes de marcarlas como implementadas.**
 
 ## CU-GAS-01 — Dividir gastos compartidos
-- **Origen:** nueva funcionalidad propuesta, **sin implementación ni pruebas verificadas**. **Prioridad:** media. **Requisito:** RF-GAS-01.
+- **Origen:** flujo sandbox implementado de forma básica; los criterios de aceptación no están todos verificados. **Prioridad:** media. **Requisito:** RF-GAS-01.
 - **Actor principal:** usuario autenticado (organizador).
 - **Actores secundarios:** participantes seleccionados.
 - **Objetivo:** repartir un importe entre varios participantes y generar solicitudes individuales.
@@ -105,18 +105,17 @@
 - **Postcondición de éxito:** notificaciones propias visibles; no se alteran movimientos financieros.
 - **Aceptación:** un evento financiero no debe notificar duplicadamente por reintentos inválidos (RN-TX-08).
 
-## Trazabilidad preliminar a código y pruebas heredadas
+## Trazabilidad preliminar a implementación y pruebas
 
 | Caso de uso | Evidencia del repositorio | Estado de cobertura |
 | --- | --- | --- |
-| CU-AUT-01 / CU-AUT-02 | `cypress/tests/ui/auth.spec.ts` | Pruebas heredadas relacionadas; falta contrastar criterios nuevos |
-| CU-TX-04 | `cypress/tests/ui/transaction-feeds.spec.ts` | Pruebas heredadas de feeds y paginación |
-| CU-TX-05 | `cypress/tests/ui/transaction-view.spec.ts` | Pruebas heredadas del detalle |
-| CU-CTA-01 | `cypress/tests/ui/bankaccounts.spec.ts` | Pruebas heredadas de alta, validación y baja lógica |
-| CU-CON-01 | `cypress/tests/ui/new-transaction.spec.ts`, `cypress/tests/ui/transaction-feeds.spec.ts` | Búsqueda/feed presentes; alta/baja específica sin verificar |
-| CU-GAS-01 | Ninguna identificada | Desarrollo y pruebas pendientes |
-| CU-NOT-01 | `cypress/tests/ui/notifications.spec.ts` | Pruebas heredadas de notificaciones |
+| CU-AUT-01 / CU-AUT-02 | `backend/http/routes.ts`, `web/src/App.svelte`; `cypress/e2e/payments.cy.ts` cubre login para el flujo E2E | Registro/login activos; cobertura E2E limitada a autenticación usada en ese escenario. Las antiguas specs React ya no están en el árbol activo. |
+| CU-TX-04 / CU-TX-05 | `backend/http/routes.ts`, `web/src/App.svelte` | Dashboard muestra operaciones; CP-TX-09/10 cubren historial positivo/negativo en [informe INF-CP-01](../02_pruebas/informe-estado-casos-prueba.md); no hay suite E2E activa de historial/detalle identificada. |
+| CU-CTA-01 | — | Gestión de cuentas bancarias no aparece en el producto activo revisado. |
+| CU-CON-01 | `backend/http/routes.ts`, `web/src/App.svelte` | La lista de usuarios apoya selección de destinatario; altas/bajas de contactos no identificadas. |
+| CU-GAS-01 | `backend/http/routes.ts` (`POST /api/splits`), `web/src/App.svelte`, `web/src/lib/oracle.integration.test.ts` | Implementación sandbox básica; desglose previo e idempotencia propia faltan. CP-GAS-04/05 cubren creación válida y participante duplicado en [informe INF-CP-01](../02_pruebas/informe-estado-casos-prueba.md); están diseñados, no ejecutados. |
+| CU-NOT-01 | — | No hay bandeja/ruta durable de notificaciones en el runtime activo; RF-PROD-08/CU-NOT-01 siguen como brecha. |
 
 Consulte [requisitos de ampliación](./requisitos-ampliacion.md) y [escenarios de prueba propuestos](../02_pruebas/escenarios-ampliacion.md).
 
-**Nota:** este cambio amplía documentación. No modifica la implementación, no corrige los defectos reservados y no certifica pruebas.
+**Nota:** los casos y criterios no certifican pruebas. La división tiene una implementación sandbox básica; esta documentación no cambia código ni corrige defectos reservados.

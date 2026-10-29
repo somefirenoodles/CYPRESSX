@@ -54,7 +54,7 @@ El sistema debe permitir buscar usuarios visibles y, cuando se implemente la ope
 
 **Trazabilidad:** CU-CON-01; CP-CON-01 y CP-CON-02.
 
-## RF-GAS-01 — División de gastos (funcionalidad futura)
+## RF-GAS-01 — División de gastos
 El sistema deberá permitir repartir un gasto entre participantes y crear solicitudes de pago individuales.
 - Debe validar importe positivo, participantes únicos y distribución exacta en centavos.
 - Debe distribuir de forma determinista los centavos sobrantes en repartos iguales, y mostrar el resultado antes de confirmar.
@@ -62,7 +62,9 @@ El sistema deberá permitir repartir un gasto entre participantes y crear solici
 - Debe impedir duplicados al reintentar una solicitud y respetar las reglas de aceptación, rechazo y autorización existentes.
 - La política sobre inclusión del organizador en el reparto deberá definirse antes de su implementación.
 
-**Trazabilidad:** CU-GAS-01; CP-GAS-01 y CP-GAS-02. **Estado:** sin desarrollo verificado.
+**Estado de implementación:** `POST /api/splits` crea participaciones iguales y solicitudes pendientes en Oracle. La UI no muestra el desglose previo y el endpoint no tiene clave idempotente propia; el organizador está excluido. Por ello, la existencia del flujo no acredita cumplimiento de todos los criterios de aceptación.
+
+**Trazabilidad:** CU-GAS-01; CP-GAS-01/02/03/04/05; [auditoría actual](../03_mantenimiento/auditoria-brecha-arquitectura-objetivo.md). Los casos no se declaran ejecutados por esta documentación.
 
 ## RF-NOT-01 — Notificaciones de eventos
 El sistema debe mostrar notificaciones relacionadas con eventos relevantes del usuario.
