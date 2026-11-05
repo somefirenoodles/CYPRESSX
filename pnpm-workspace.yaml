@@ -1,0 +1,11 @@
+allowBuilds:
+  cypress: true
+  esbuild: true
+  oracledb: false
+
+ignoredBuiltDependencies:
+  - oracledb
+
+onlyBuiltDependencies:
+  - cypress
+  - esbuild

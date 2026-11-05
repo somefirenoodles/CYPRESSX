@@ -1,0 +1,363 @@
+{
+  "id": "INF-USO-01",
+  "date": "2026-11-04",
+  "timezone": "America/Bogota",
+  "scope": {
+    "from": "2026-11-04T17:31:46.400Z",
+    "until_exclusive": "2026-11-04T19:59:58.372Z",
+    "description": "Etapa de implementación anterior a la solicitud de verificación arquitectónica; no incluye esta auditoría ni trabajo posterior."
+  },
+  "opencode": {
+    "model": "opencode/deepseek-v4.1-flash-free",
+    "calls": [
+      {
+        "timestamp": "2026-11-04T17:39:58.086Z",
+        "task_id": "ers-catalog-01",
+        "id": "ses_e585a75aeffeSA7H0pqGCkIfBj",
+        "time_created": 1793814006414,
+        "time_updated": 1793814047316,
+        "tokens_input": 117104,
+        "tokens_output": 2605,
+        "tokens_reasoning": 1255,
+        "tokens_cache_read": 319360,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "blocked",
+        "local_time": "12:39:58"
+      },
+      {
+        "timestamp": "2026-11-04T17:41:38.606Z",
+        "task_id": "ers-catalog-01-retry",
+        "id": "ses_e58590c84ffeWkRZPu4AZNnWfs",
+        "time_created": 1793814098815,
+        "time_updated": 1793814296363,
+        "tokens_input": 50957,
+        "tokens_output": 24540,
+        "tokens_reasoning": 13108,
+        "tokens_cache_read": 190208,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "timeout",
+        "local_time": "12:41:38"
+      },
+      {
+        "timestamp": "2026-11-04T17:45:59.775Z",
+        "task_id": "backend-idempotency-01",
+        "id": "ses_e58551024ffehb2IXxMx5Jzxv3",
+        "time_created": 1793814360035,
+        "time_updated": 1793814527797,
+        "tokens_input": 29472,
+        "tokens_output": 4225,
+        "tokens_reasoning": 12512,
+        "tokens_cache_read": 373120,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "partial",
+        "local_time": "12:45:59"
+      },
+      {
+        "timestamp": "2026-11-04T17:49:26.656Z",
+        "task_id": "backend-idempotency-01-finish",
+        "id": "ses_e5851e798ffeamv4N5IOwULJKb",
+        "time_created": 1793814567022,
+        "time_updated": 1793814681745,
+        "tokens_input": 22917,
+        "tokens_output": 7050,
+        "tokens_reasoning": 3856,
+        "tokens_cache_read": 263424,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "partial",
+        "local_time": "12:49:26"
+      },
+      {
+        "timestamp": "2026-11-04T17:52:37.651Z",
+        "task_id": "backend-customer-flows-01",
+        "id": "ses_e584efe54ffeiHWnAy5gPRmI4l",
+        "time_created": 1793814757807,
+        "time_updated": 1793814968725,
+        "tokens_input": 91175,
+        "tokens_output": 7990,
+        "tokens_reasoning": 21747,
+        "tokens_cache_read": 322304,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "timeout",
+        "local_time": "12:52:37"
+      },
+      {
+        "timestamp": "2026-11-04T17:56:57.624Z",
+        "task_id": "backend-split-inbound-01",
+        "id": "ses_e584b06abffeGyuBBbVcx9etEk",
+        "time_created": 1793815017816,
+        "time_updated": 1793815241332,
+        "tokens_input": 20695,
+        "tokens_output": 6505,
+        "tokens_reasoning": 18071,
+        "tokens_cache_read": 353664,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "timeout",
+        "local_time": "12:56:57"
+      },
+      {
+        "timestamp": "2026-11-04T18:02:33.794Z",
+        "task_id": "recurrence-lifecycle-01",
+        "id": "ses_e5845e596ffeSG0Sh0BmQOFEgV",
+        "time_created": 1793815353966,
+        "time_updated": 1793815480175,
+        "tokens_input": 58065,
+        "tokens_output": 12021,
+        "tokens_reasoning": 17797,
+        "tokens_cache_read": 226816,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "partial",
+        "local_time": "13:02:33"
+      },
+      {
+        "timestamp": "2026-11-04T18:06:11.971Z",
+        "task_id": "recurrence-router-fix-01",
+        "id": "ses_e5842915fffeXfGMPDQfsLUeI0",
+        "time_created": 1793815572144,
+        "time_updated": 1793815718656,
+        "tokens_input": 33206,
+        "tokens_output": 4617,
+        "tokens_reasoning": 18842,
+        "tokens_cache_read": 45696,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "complete",
+        "local_time": "13:06:11"
+      },
+      {
+        "timestamp": "2026-11-04T18:10:53.593Z",
+        "task_id": "web-account-tools-01",
+        "id": "ses_e583e4550ffePmMDa0W4Z02zXo",
+        "time_created": 1793815853746,
+        "time_updated": 1793815992325,
+        "tokens_input": 25727,
+        "tokens_output": 10612,
+        "tokens_reasoning": 12071,
+        "tokens_cache_read": 43520,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "complete",
+        "local_time": "13:10:53"
+      },
+      {
+        "timestamp": "2026-11-04T18:14:02.297Z",
+        "task_id": "web-history-split-01",
+        "id": "ses_e583b62dfffevEO2WyqRJGPfMQ",
+        "time_created": 1793816042793,
+        "time_updated": 1793816131041,
+        "tokens_input": 54502,
+        "tokens_output": 2462,
+        "tokens_reasoning": 3112,
+        "tokens_cache_read": 210432,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "blocked",
+        "local_time": "13:14:02"
+      },
+      {
+        "timestamp": "2026-11-04T18:17:01.029Z",
+        "task_id": "web-history-01-retry",
+        "id": "ses_e5838a975ffePFlOP2kvoxV5Gr",
+        "time_created": 1793816221328,
+        "time_updated": 1793816242750,
+        "tokens_input": 9641,
+        "tokens_output": 2155,
+        "tokens_reasoning": 1310,
+        "tokens_cache_read": 17280,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "complete",
+        "local_time": "13:17:01"
+      },
+      {
+        "timestamp": "2026-11-04T18:17:41.776Z",
+        "task_id": "web-split-01",
+        "id": "ses_e58380aa3ffeofQfRp43HhEwKZ",
+        "time_created": 1793816261984,
+        "time_updated": 1793816318022,
+        "tokens_input": 13730,
+        "tokens_output": 4250,
+        "tokens_reasoning": 5808,
+        "tokens_cache_read": 33536,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "complete",
+        "local_time": "13:17:41"
+      },
+      {
+        "timestamp": "2026-11-04T18:19:30.608Z",
+        "task_id": "web-app-wiring-01",
+        "id": "ses_e58366111ffeNxn5uHbG0OAfgW",
+        "time_created": 1793816370936,
+        "time_updated": 1793816722880,
+        "tokens_input": 45374,
+        "tokens_output": 12949,
+        "tokens_reasoning": 19901,
+        "tokens_cache_read": 578560,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "timeout",
+        "local_time": "13:19:30"
+      },
+      {
+        "timestamp": "2026-11-04T18:25:59.295Z",
+        "task_id": "oracle-regressions-01",
+        "id": "ses_e58307361ffeTsmt0ZdCJfLp4D",
+        "time_created": 1793816759458,
+        "time_updated": 1793816833890,
+        "tokens_input": 101940,
+        "tokens_output": 2134,
+        "tokens_reasoning": 5388,
+        "tokens_cache_read": 302720,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "blocked",
+        "local_time": "13:25:59"
+      },
+      {
+        "timestamp": "2026-11-04T18:35:11.520Z",
+        "task_id": "oracle-regressions-01-retry",
+        "id": "ses_e58280598ffehdivvF1lelHcjT",
+        "time_created": 1793817311854,
+        "time_updated": 1793817506273,
+        "tokens_input": 4888,
+        "tokens_output": 3898,
+        "tokens_reasoning": 16580,
+        "tokens_cache_read": 28416,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "timeout",
+        "local_time": "13:35:11"
+      },
+      {
+        "timestamp": "2026-11-04T18:43:32.245Z",
+        "task_id": "web-e2e-01",
+        "id": "ses_e58206157ffepKXA0QiuAf5qhj",
+        "time_created": 1793817812656,
+        "time_updated": 1793817854349,
+        "tokens_input": 12173,
+        "tokens_output": 4024,
+        "tokens_reasoning": 6592,
+        "tokens_cache_read": 28928,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "complete",
+        "local_time": "13:43:32"
+      },
+      {
+        "timestamp": "2026-11-04T18:48:38.804Z",
+        "task_id": "ledger-adr-01",
+        "id": "ses_e581bb4cbffexBpdbeUis4Q77w",
+        "time_created": 1793818118969,
+        "time_updated": 1793818172594,
+        "tokens_input": 13869,
+        "tokens_output": 2937,
+        "tokens_reasoning": 2123,
+        "tokens_cache_read": 87808,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "complete",
+        "local_time": "13:48:38"
+      },
+      {
+        "timestamp": "2026-11-04T19:05:10.993Z",
+        "task_id": "architecture-record-02",
+        "id": "ses_e580c9107ffeDpPPc4DXB5NTez",
+        "time_created": 1793819111167,
+        "time_updated": 1793819152142,
+        "tokens_input": 12033,
+        "tokens_output": 2399,
+        "tokens_reasoning": 1044,
+        "tokens_cache_read": 38656,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "reported_result": "complete",
+        "local_time": "14:05:10"
+      }
+    ],
+    "totals": {
+      "tokens_input": 717468,
+      "tokens_output": 117373,
+      "tokens_reasoning": 181117,
+      "tokens_cache_read": 3464448,
+      "tokens_cache_write": 0,
+      "cost": 0.0
+    },
+    "result_counts": {
+      "blocked": 3,
+      "complete": 7,
+      "partial": 3,
+      "timeout": 5
+    },
+    "note": "Resultados reportados por la herramienta, no aceptación del código. Timeouts pueden haber dejado archivos. Contadores observados; respuestas interrumpidas podrían no estar contabilizadas completamente."
+  },
+  "codex": {
+    "counter_snapshot_start": "2026-11-04T17:16:47.962Z",
+    "counter_snapshot_end": "2026-11-04T19:33:18.768Z",
+    "principal_counter_delta": {
+      "input_tokens": 33183289,
+      "cached_input_tokens": 32945152,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 158778,
+      "reasoning_output_tokens": 77854,
+      "total_tokens": 33342067
+    },
+    "principal_uncached_input": 238137,
+    "children": [
+      {
+        "agent": "/root/ers_catalog",
+        "usage": {
+          "input_tokens": 644955,
+          "cached_input_tokens": 629248,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 959,
+          "reasoning_output_tokens": 424,
+          "total_tokens": 645914
+        }
+      },
+      {
+        "agent": "/root/backend_gaps",
+        "usage": {
+          "input_tokens": 385384,
+          "cached_input_tokens": 372480,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 342,
+          "reasoning_output_tokens": 15,
+          "total_tokens": 385726
+        }
+      },
+      {
+        "agent": "/root/frontend_gaps",
+        "usage": {
+          "input_tokens": 255106,
+          "cached_input_tokens": 241792,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 189,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 255295
+        }
+      }
+    ],
+    "children_totals": {
+      "input_tokens": 1285445,
+      "cached_input_tokens": 1243520,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 1490,
+      "reasoning_output_tokens": 439,
+      "total_tokens": 1286935
+    },
+    "note": "Diferencia de los contadores disponibles más cercanos al tramo, no medición de facturación por solicitud. Los tres subagentes iniciales fueron interrumpidos tras la corrección del usuario; sus contadores se muestran separados."
+  },
+  "account_limit_snapshot": {
+    "primary_used_percent": 59,
+    "primary_window_minutes": 300,
+    "weekly_used_percent": 33,
+    "note": "Cuota compartida por la cuenta, observada durante la auditoría; sin medición inicial para atribuir su variación a este chat."
+  }
+}

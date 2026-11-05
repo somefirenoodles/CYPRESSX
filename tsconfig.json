@@ -1,29 +1,37 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
-    "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "noFallthroughCasesInSwitch": true,
-    "types": ["cypress"]
+    "resolveJsonModule": true,
+    "types": [
+      "node",
+      "vitest/globals",
+      "cypress"
+    ]
   },
   "include": [
-    "src/**/*.cy.{js,ts,jsx,tsx}",
-    "scripts",
-    "backend",
-    "src/__tests__",
-    "cypress.d.ts",
-    "src/utils/portUtils.ts"
+    "backend/**/*.ts",
+    "web/src/**/*.ts",
+    "vite.config.ts",
+    "cypress.config.ts",
+    "cypress/e2e/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "src"
   ]
 }

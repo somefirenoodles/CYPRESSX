@@ -1,5 +1,7 @@
 # Informe de estado de casos de prueba
 
+**Registro histórico:** conserva los resultados del 29 de octubre de 2026. Para el estado posterior consultar la [matriz única](../01_requisitos/matriz-trazabilidad.md) y la evidencia de cada ejecución.
+
 **ID del informe:** INF-CP-01  
 **Fecha:** 2026-10-29  
 **Proyecto:** Superpay  

@@ -1,47 +1,143 @@
-name: Superpay CI
+name: CypressX CI
 
 on:
   push:
     branches:
       - develop
-      - "chore/**"
-      - "feature/**"
-      - "fix/**"
+      - main
   pull_request:
-    branches:
-      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: superpay-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  verificar-linea-base:
-    name: Verificar línea base en Windows
-    runs-on: windows-latest
-    timeout-minutes: 20
+  traceability:
+    name: ERS, CU, RNF y trazabilidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - name: Verificar fuente única y formato generado
+        run: node scripts/traceability.mjs check
+      - name: Probar controles de trazabilidad y evidencia
+        run: node --test scripts/traceability.test.mjs
+
+  verify:
+    name: Typecheck, Oracle tests, E2E and build
+    needs: traceability
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      oracle:
+        image: gvenzl/oracle-free:23.26.3-slim-faststart
+        env:
+          ORACLE_PASSWORD: Cypressx_Local_Only_26
+          APP_USER: CYPRESSX_APP
+          APP_USER_PASSWORD: Cypressx_AppLocal26!
+        ports:
+          - 1521:1521
+        options: >-
+          --health-cmd healthcheck.sh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 90s
+    env:
+      DB_USER: CYPRESSX_APP
+      DB_PASSWORD: Cypressx_AppLocal26!
+      DB_CONNECT_STRING: 127.0.0.1:1521/FREEPDB1
+      PORT: 3001
 
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
+      - name: Configurar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.20.0
-          cache: yarn
+          cache: pnpm
 
       - name: Mostrar entorno
-        shell: pwsh
         run: |
           node --version
-          yarn --version
-          $PSVersionTable.PSVersion
+          pnpm --version
 
       - name: Instalar dependencias
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Validar tipos
-        run: yarn types
+        run: pnpm types
+
+      - name: Iniciar evidencia de la revisión y fuentes
+        run: pnpm evidence:start
+
+      - name: Auditar dependencias de producción
+        run: pnpm audit --prod --json > reports/dependency-audit.json
+
+      - name: Rechazar avisos moderados o superiores en herramientas
+        run: pnpm audit --audit-level=moderate --json > reports/dependency-audit-all.json
+
+      - name: Preparar fixture del esquema anterior en Oracle desechable
+        env:
+          SUPERPAY_TEST_DATABASE: disposable
+        run: pnpm test:migration:prepare
+
+      - name: Crear esquema y datos sandbox
+        run: pnpm db:setup
 
       - name: Ejecutar pruebas unitarias
-        run: yarn test:unit:ci
+        run: pnpm test:report
+
+      - name: Conciliar asientos y proyecciones del ledger
+        run: pnpm ledger:check
+
+      - name: Ejecutar flujos web Cypress
+        run: pnpm test:e2e
 
       - name: Construir aplicación
-        run: yarn build
+        run: pnpm build
+
+      - name: Construir imagen con el stack fijado
+        run: docker build --tag superpay-ci:validation .
+
+      - name: Verificar imagen, API y Oracle enlazados
+        run: >-
+          node --input-type=module -e
+          "import { productionSmoke } from './scripts/production-smoke.mjs';
+          await productionSmoke('superpay-ci:validation',
+          { DB_USER: process.env.DB_USER, DB_PASSWORD: process.env.DB_PASSWORD, port: '1521' });"
+
+      - name: Consolidar resultados sin convertir omisiones en aprobaciones
+        if: always()
+        run: pnpm evidence:finish
+
+      - name: Publicar matriz y evidencia de esta ejecución
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trazabilidad-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/run.json
+            reports/vitest.json
+            reports/cypress.json
+            reports/traceability.json
+            reports/traceability.md
+            reports/dependency-audit.json
+            reports/dependency-audit-all.json
+            reports/production-smoke.json
+            docs/01_requisitos/matriz-trazabilidad.md
+          if-no-files-found: warn

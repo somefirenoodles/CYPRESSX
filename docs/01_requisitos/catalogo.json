@@ -1,0 +1,4774 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "id": "ERS-001",
+    "date": "2026-11-04",
+    "status": "vigente",
+    "purpose": "Definir la línea base verificable de requisitos funcionales, casos de uso y casos de prueba del sandbox Superpay, separando el comportamiento esperado del estado real de implementación y conservando la trazabilidad con el legado.",
+    "scope": [
+      "Registro e inicio de sesión local con sesión asociada al usuario.",
+      "Pago entre usuarios, solicitudes de pago, aceptación, rechazo, consulta e historial.",
+      "Dinero exacto en unidades menores con dos decimales para USD, COP y CRC.",
+      "División de gastos, recurrencias, notificaciones, cotización FX y comercios simulados.",
+      "Operaciones de sandbox: recargas y recepción externa simulada.",
+      "Persistencia Oracle, transacciones y libro mayor (ledger) del camino activo backend/http.",
+      "Patrones de idempotencia, reintento y gestión de clientes tomados de documentación pública, sin integración real.",
+      "Evaluación dinámica de RNF con SQuaRE como guía, métricas locales y evidencia separada de automatización, agentes y usuarios finales."
+    ],
+    "outOfScope": [
+      "Movimiento de dinero real, conexión bancaria, adquirencia real o verificación externa de titularidad.",
+      "Reversos, contracargos y recuperación de fondos fuera de los RF existentes; quedan como decisión pendiente.",
+      "Cypress Cloud, Percy, proveedores externos de autenticación y dependencias obligatorias no locales.",
+      "Aplicaciones React/Electron y rutas legacy como parte del runtime activo.",
+      "Aprobación formal, conformidad o resultados de pruebas no ejecutadas.",
+      "Certificación ISO y afirmaciones de cumplimiento financiero o aptitud para operar dinero real."
+    ]
+  },
+  "sources": [
+    {
+      "id": "S-STRIPE-IDEMPOTENCY",
+      "title": "Stripe API — Idempotent requests",
+      "url": "https://docs.stripe.com/api/idempotent_requests"
+    },
+    {
+      "id": "S-STRIPE-RETRIES",
+      "title": "Stripe Billing — Smart retries",
+      "url": "https://docs.stripe.com/billing/revenue-recovery/smart-retries"
+    },
+    {
+      "id": "S-STRIPE-REFUNDS",
+      "title": "Stripe — Refunds",
+      "url": "https://docs.stripe.com/refunds"
+    },
+    {
+      "id": "S-STRIPE-PORTAL",
+      "title": "Stripe — Customer management",
+      "url": "https://docs.stripe.com/customer-management"
+    },
+    {
+      "id": "S-ISO-78176",
+      "title": "ISO 78176 — Financial services (referencia de dominio)",
+      "url": "https://www.iso.org/standard/78176.html"
+    },
+    {
+      "id": "S-ISO-78177",
+      "title": "ISO 78177 — Financial services (referencia de dominio)",
+      "url": "https://www.iso.org/standard/78177.html"
+    },
+    {
+      "id": "S-ISO-83467",
+      "title": "ISO 83467 — Financial services (referencia de dominio)",
+      "url": "https://www.iso.org/standard/83467.html"
+    },
+    {
+      "id": "S-STRIPE-LEDGER",
+      "title": "Stripe: Ledger, tracking and validating money movement",
+      "url": "https://stripe.com/blog/ledger-stripe-system-for-tracking-and-validating-money-movement"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-01",
+      "title": "Idempotencia de operaciones financieras",
+      "resolution": "Toda operación que crea o modifica dinero acepta una clave idempotente persistida. La misma clave con el mismo payload devuelve el resultado original sin duplicar efectos; la misma clave con payload distinto se rechaza sin efectos.",
+      "rationale": "Evita dobles débitos y dobles solicitudes ante reintentos de red o del usuario, y hace explícito el conflicto de reutilización de clave.",
+      "sourceIds": [
+        "S-STRIPE-IDEMPOTENCY",
+        "S-STRIPE-RETRIES"
+      ]
+    },
+    {
+      "id": "D-02",
+      "title": "Política de reintentos de recurrencias",
+      "resolution": "Una recurrencia con saldo insuficiente se marca failed y se reintenta como máximo tres veces, con esperas visibles de 1 hora, 24 horas y 72 horas; después avanza al siguiente periodo sin reintentos adicionales. Estos intervalos son una política local reversible, no una recomendación normativa de Stripe. Los errores técnicos conservan rollback y se reintentan con backoff acotado sin adelantar la ocurrencia.",
+      "rationale": "Equilibra recuperación de fallos transitorios con límites observables y evita reintentos indefinidos o silenciosos.",
+      "sourceIds": [
+        "S-STRIPE-RETRIES"
+      ]
+    },
+    {
+      "id": "D-03",
+      "title": "Reparto exacto de centavos",
+      "resolution": "En repartos iguales, el remanente se distribuye de forma determinista: 10 entre 3 produce 3.34, 3.33 y 3.33, asignando primero los centavos sobrantes según el orden estable de participantes. La suma de participaciones siempre iguala el total.",
+      "rationale": "El dinero se representa en unidades menores; ninguna suma puede perder ni inventar centavos.",
+      "sourceIds": []
+    },
+    {
+      "id": "D-04",
+      "title": "Organizador en la división de gastos",
+      "resolution": "La inclusión del organizador es configurable. Puede incluirse a sí mismo sin crear una solicitud de pago contra su propia cuenta.",
+      "rationale": "El organizador puede o no participar del gasto; autosolicitarse produciría un movimiento sin sentido contable.",
+      "sourceIds": []
+    },
+    {
+      "id": "D-05",
+      "title": "Calendario y recurrencias en UTC",
+      "resolution": "Las fechas de recurrencia se anclan en UTC y los periodos semanales, mensuales y trimestrales se calculan desde esa ancla; la presentación puede localizarse sin alterar el cálculo. Los periodos perdidos por indisponibilidad se saltan, sin cobros acumulados.",
+      "rationale": "Un ancla única evita duplicados o saltos por zonas horarias y cambios de horario.",
+      "sourceIds": []
+    },
+    {
+      "id": "D-06",
+      "title": "Privacidad personal por defecto",
+      "resolution": "Historial, detalle y notificaciones se filtran en servidor por destinatario o participante. La visibilidad de contactos es la mínima necesaria y nunca expone movimientos privados ajenos.",
+      "rationale": "La autorización no puede depender de que la interfaz oculte datos.",
+      "sourceIds": []
+    },
+    {
+      "id": "D-07",
+      "title": "Reversos y recuperación fuera de los RF existentes",
+      "resolution": "No se agregan requisitos de reverso, contracargo ni recuperación en esta línea base. Cualquier necesidad futura requiere requisito, criterio reproducible y regresión propios.",
+      "rationale": "Evita ampliar alcance funcional sin análisis de dominio ni trazabilidad; la referencia pública de reembolsos se conserva solo como patrón conceptual.",
+      "sourceIds": [
+        "S-STRIPE-REFUNDS"
+      ]
+    },
+    {
+      "id": "D-08",
+      "title": "Integraciones simuladas y patrones, no proveedores reales",
+      "resolution": "Bancos, comercios, FX, recepción externa y notificaciones son demostrativos. Se adoptan patrones de idempotencia, reintento y gestión de clientes, sin conectar cuentas ni mover dinero real.",
+      "rationale": "El objetivo académico es un sandbox operable y reproducible, no una integración financiera de producción.",
+      "sourceIds": [
+        "S-STRIPE-IDEMPOTENCY",
+        "S-STRIPE-RETRIES",
+        "S-STRIPE-PORTAL",
+        "S-ISO-78176",
+        "S-ISO-78177",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "D-09",
+      "title": "Dinero exacto en unidades menores",
+      "resolution": "Los importes se persisten como enteros en unidades menores con dos decimales para USD, COP y CRC. La interfaz no convierte a Number para cálculos financieros ni descarta la clave de reintento.",
+      "rationale": "Los tipos binarios de punto flotante introducen errores de redondeo incompatibles con saldos y ledger.",
+      "sourceIds": []
+    },
+    {
+      "id": "D-10",
+      "title": "Ledger interno autoritativo",
+      "resolution": "El ledger de doble entrada es la fuente de verdad. Los asientos se contabilizan atómicamente, cuadran por moneda y son inmutables; los saldos son proyecciones reconstruibles. La transacción Oracle se limita al comando confirmado y sus efectos locales, sin abarcar interacción del usuario ni llamadas externas.",
+      "rationale": "Decisión del usuario. La doble entrada define la contabilidad; la atomicidad garantiza la integridad de su escritura.",
+      "sourceIds": [
+        "S-STRIPE-LEDGER"
+      ]
+    },
+    {
+      "id": "D-11",
+      "title": "Concurrencia y futura extracción del ledger",
+      "resolution": "La deduplicación reserva cada intención por usuario, acción y clave; no se bloquea al usuario completo. La contabilización bloquea solo cuentas afectadas en orden estable. Una futura extracción a microservicio conservará el contrato lógico y requerirá outbox/inbox y recuperación de mensajes; no se introduce infraestructura adicional en esta etapa.",
+      "rationale": "Reducir contención innecesaria sin eliminar controles contra sobregiro y sin desplegar un servicio antes de medir la necesidad.",
+      "sourceIds": [
+        "S-STRIPE-LEDGER"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "RF-AUT-01",
+      "title": "Autenticación segura",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe permitir iniciar sesión a un usuario registrado únicamente con credenciales válidas.",
+      "acceptance": [
+        {
+          "id": "RF-AUT-01-A1",
+          "text": "Las credenciales se validan en el servidor y la sesión queda asociada al usuario correcto."
+        },
+        {
+          "id": "RF-AUT-01-A2",
+          "text": "Los recursos privados rechazan el acceso sin sesión válida y exigen nuevo acceso tras la expiración."
+        },
+        {
+          "id": "RF-AUT-01-A3",
+          "text": "Las credenciales incorrectas producen una respuesta no autenticada sin revelar si el usuario existe."
+        }
+      ],
+      "useCases": [
+        "CU-AUT-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-AUT-02",
+      "title": "Registro de cuenta",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe registrar usuarios con identificadores únicos y datos obligatorios válidos.",
+      "acceptance": [
+        {
+          "id": "RF-AUT-02-A1",
+          "text": "Se comprueba la coincidencia de contraseña y confirmación y se rechazan campos obligatorios inválidos."
+        },
+        {
+          "id": "RF-AUT-02-A2",
+          "text": "Se impiden identificadores duplicados y no quedan registros parciales si falla la operación."
+        },
+        {
+          "id": "RF-AUT-02-A3",
+          "text": "La contraseña se almacena con un mecanismo no reversible adecuado y nunca se devuelve en claro."
+        }
+      ],
+      "useCases": [
+        "CU-AUT-02"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-TX-01",
+      "title": "Realizar pago entre usuarios",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe permitir a un usuario autenticado transferir un importe exacto a otro usuario existente, con débito, crédito y registro en el ledger dentro de una sola transacción.",
+      "acceptance": [
+        {
+          "id": "RF-TX-01-A1",
+          "text": "Se valida sesión, destinatario existente, importe positivo, saldo suficiente y moneda soportada antes de ejecutar."
+        },
+        {
+          "id": "RF-TX-01-A2",
+          "text": "El débito al pagador y el crédito al destinatario son exactos, atómicos y quedan registrados en el ledger."
+        },
+        {
+          "id": "RF-TX-01-A3",
+          "text": "La clave idempotente se persiste; repetir la misma clave con el mismo payload no duplica el pago y con payload distinto se rechaza."
+        },
+        {
+          "id": "RF-TX-01-A4",
+          "text": "Un usuario no puede debitar cuentas ajenas ni pagar sin autorización de la cuenta origen."
+        },
+        {
+          "id": "RF-TX-01-A5",
+          "text": "La respuesta y los errores no exponen saldos, identificadores ni movimientos de terceros."
+        },
+        {
+          "id": "RF-TX-01-A6",
+          "text": "El pago confirmado genera una notificación persistida al destinatario en la misma transacción; reintentos no la duplican."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-IDEMPOTENCY"
+      ]
+    },
+    {
+      "id": "RF-TX-02",
+      "title": "Crear solicitud de pago",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe permitir crear una solicitud de pago pendiente dirigida a un usuario existente, sin modificar saldos al crearla.",
+      "acceptance": [
+        {
+          "id": "RF-TX-02-A1",
+          "text": "Se validan sesión, destinatario existente, importe positivo y moneda soportada."
+        },
+        {
+          "id": "RF-TX-02-A2",
+          "text": "La solicitud se crea en estado pendiente y no produce débito ni crédito."
+        },
+        {
+          "id": "RF-TX-02-A3",
+          "text": "Una clave idempotente repetida con el mismo payload no crea solicitudes duplicadas."
+        },
+        {
+          "id": "RF-TX-02-A4",
+          "text": "Los errores de validación no generan solicitudes ni notificaciones parciales."
+        },
+        {
+          "id": "RF-TX-02-A5",
+          "text": "La creación genera una notificación persistida al pagador, sin modificar los saldos."
+        }
+      ],
+      "useCases": [
+        "CU-TX-02"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-IDEMPOTENCY"
+      ]
+    },
+    {
+      "id": "RF-TX-03",
+      "title": "Consultar solicitudes y estado",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir al usuario autorizado consultar sus solicitudes de pago y el estado actual de cada una.",
+      "acceptance": [
+        {
+          "id": "RF-TX-03-A1",
+          "text": "Solo el pagador, el destinatario o un participante autorizado puede consultar la solicitud."
+        },
+        {
+          "id": "RF-TX-03-A2",
+          "text": "La consulta devuelve importe, tipo, fecha, participantes y estado."
+        },
+        {
+          "id": "RF-TX-03-A3",
+          "text": "Un identificador inexistente o ajeno se rechaza sin revelar su existencia."
+        }
+      ],
+      "useCases": [
+        "CU-TX-03"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-TX-04",
+      "title": "Aceptar solicitud de pago",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El destinatario de una solicitud pendiente debe poder aceptarla, ejecutando el pago exacto una sola vez.",
+      "acceptance": [
+        {
+          "id": "RF-TX-04-A1",
+          "text": "Solo el destinatario puede aceptar una solicitud pendiente y debe tener saldo suficiente."
+        },
+        {
+          "id": "RF-TX-04-A2",
+          "text": "La aceptación debita, acredita, registra el ledger y cambia el estado a aceptada de forma atómica."
+        },
+        {
+          "id": "RF-TX-04-A3",
+          "text": "Repetir la aceptación no vuelve a debitar y devuelve un conflicto o el resultado idempotente."
+        },
+        {
+          "id": "RF-TX-04-A4",
+          "text": "Aceptar genera una notificación persistida al solicitante de forma atómica con el pago y la resolución."
+        }
+      ],
+      "useCases": [
+        "CU-TX-04"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-IDEMPOTENCY"
+      ]
+    },
+    {
+      "id": "RF-TX-05",
+      "title": "Rechazar solicitud de pago",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El destinatario de una solicitud pendiente debe poder rechazarla sin que se mueva dinero.",
+      "acceptance": [
+        {
+          "id": "RF-TX-05-A1",
+          "text": "Solo el destinatario puede rechazar una solicitud pendiente."
+        },
+        {
+          "id": "RF-TX-05-A2",
+          "text": "El rechazo cambia el estado a rechazada sin débito, crédito ni asiento financiero."
+        },
+        {
+          "id": "RF-TX-05-A3",
+          "text": "Repetir el rechazo no produce efectos adicionales ni notificaciones duplicadas."
+        }
+      ],
+      "useCases": [
+        "CU-TX-05"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-TX-06",
+      "title": "No repetir operaciones financieras",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe impedir que reintentos de pagos, solicitudes, aceptaciones o rechazos produzcan efectos financieros duplicados.",
+      "acceptance": [
+        {
+          "id": "RF-TX-06-A1",
+          "text": "Las operaciones financieras aceptan una clave idempotente persistida y la asocian a su efecto."
+        },
+        {
+          "id": "RF-TX-06-A2",
+          "text": "Repetir la misma clave con el mismo payload devuelve el resultado original sin nuevo asiento en el ledger."
+        },
+        {
+          "id": "RF-TX-06-A3",
+          "text": "Repetir la misma clave con payload distinto se rechaza sin ejecutar la nueva operación."
+        },
+        {
+          "id": "RF-TX-06-A4",
+          "text": "Una solicitud aceptada o rechazada nunca vuelve a producir efectos, aunque se use otra clave o se intente otra acción."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-TX-02",
+        "CU-TX-04",
+        "CU-TX-05"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-IDEMPOTENCY"
+      ]
+    },
+    {
+      "id": "RF-TX-07",
+      "title": "Dinero exacto",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe representar y calcular importes en unidades menores exactas, sin pérdidas por punto flotante.",
+      "acceptance": [
+        {
+          "id": "RF-TX-07-A1",
+          "text": "Los importes se persisten como enteros en unidades menores con dos decimales para USD, COP y CRC."
+        },
+        {
+          "id": "RF-TX-07-A2",
+          "text": "Los cálculos de saldo, débito, crédito y conversión no usan aritmética binaria de punto flotante."
+        },
+        {
+          "id": "RF-TX-07-A3",
+          "text": "La suma de participaciones y movimientos iguala exactamente el total declarado."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-GAS-01",
+        "CU-FX-01",
+        "CU-REC-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-TX-08",
+      "title": "Autorización de operaciones",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe autorizar en servidor cada operación privada o mutadora según el actor y el recurso.",
+      "acceptance": [
+        {
+          "id": "RF-TX-08-A1",
+          "text": "Todo endpoint privado o mutador exige sesión y verifica la titularidad o participación del actor."
+        },
+        {
+          "id": "RF-TX-08-A2",
+          "text": "Las respuestas 401 y 403 son genéricas y no revelan la existencia de recursos ajenos."
+        },
+        {
+          "id": "RF-TX-08-A3",
+          "text": "Ocultar una opción en la interfaz no sustituye la autorización del servidor."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-TX-02",
+        "CU-TX-03",
+        "CU-TX-04",
+        "CU-TX-05",
+        "CU-CTA-01",
+        "CU-CON-01",
+        "CU-GAS-01",
+        "CU-NOT-01",
+        "CU-REC-01",
+        "CU-COM-01",
+        "CU-ING-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-TX-09",
+      "title": "Historial personal de transacciones",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe permitir consultar los movimientos permitidos al usuario autenticado.",
+      "acceptance": [
+        {
+          "id": "RF-TX-09-A1",
+          "text": "Se recuperan pagos y solicitudes propios sin incluir movimientos privados ajenos."
+        },
+        {
+          "id": "RF-TX-09-A2",
+          "text": "Se muestra importe, tipo, fecha, participantes y estado."
+        },
+        {
+          "id": "RF-TX-09-A3",
+          "text": "Cuando hay paginación, el orden es estable y no se repiten registros."
+        }
+      ],
+      "useCases": [
+        "CU-TX-03"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/customer-routes.ts",
+          "web/src/lib/History.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-TX-10",
+      "title": "Consulta de detalle y visibilidad",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir consultar el detalle de transacciones existentes cuando el actor tenga permiso.",
+      "acceptance": [
+        {
+          "id": "RF-TX-10-A1",
+          "text": "El servidor permite el detalle personal únicamente a participantes; las vistas públicas o de contactos del legado quedan retiradas de esta línea base."
+        },
+        {
+          "id": "RF-TX-10-A2",
+          "text": "Se rechazan identificadores inexistentes y accesos no autorizados sin revelar datos."
+        },
+        {
+          "id": "RF-TX-10-A3",
+          "text": "Las opciones de aceptar o rechazar aparecen solo según actor y estado, sin sustituir la autorización del servidor."
+        }
+      ],
+      "useCases": [
+        "CU-TX-03"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/customer-routes.ts",
+          "web/src/lib/History.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-CTA-01",
+      "title": "Administración de cuentas bancarias de prueba",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir a cada usuario listar, asociar y deshabilitar las cuentas bancarias ficticias que le pertenecen.",
+      "acceptance": [
+        {
+          "id": "RF-CTA-01-A1",
+          "text": "El usuario puede listar, asociar y deshabilitar solo sus propias cuentas."
+        },
+        {
+          "id": "RF-CTA-01-A2",
+          "text": "Los datos de asociación se validan antes de persistir y no se permite modificar cuentas ajenas."
+        },
+        {
+          "id": "RF-CTA-01-A3",
+          "text": "Se minimiza la exposición de identificadores bancarios y una falla no deja estado parcial."
+        },
+        {
+          "id": "RF-CTA-01-A4",
+          "text": "La funcionalidad se presenta como ficticia y no supone conectividad, pagos reales ni verificación externa."
+        }
+      ],
+      "useCases": [
+        "CU-CTA-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/customer-routes.ts",
+          "web/src/lib/AccountTools.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-PORTAL"
+      ]
+    },
+    {
+      "id": "RF-CON-01",
+      "title": "Búsqueda y gestión de contactos",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir buscar usuarios visibles y administrar la lista de contactos propios sin duplicados ni cambios sobre usuarios o movimientos históricos.",
+      "acceptance": [
+        {
+          "id": "RF-CON-01-A1",
+          "text": "La búsqueda muestra solo información permitida por las reglas de privacidad."
+        },
+        {
+          "id": "RF-CON-01-A2",
+          "text": "No se crean relaciones de contacto duplicadas y la eliminación no borra usuarios ni transacciones históricas."
+        },
+        {
+          "id": "RF-CON-01-A3",
+          "text": "La interfaz permite altas y bajas de contactos persistidas y muestra estado vacío y errores sin alterar usuarios ni historial."
+        }
+      ],
+      "useCases": [
+        "CU-CON-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/customer-routes.ts",
+          "web/src/lib/AccountTools.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-GAS-01",
+      "title": "División de gastos",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "El sistema debe permitir repartir un gasto entre participantes y crear solicitudes de pago individuales exactas.",
+      "acceptance": [
+        {
+          "id": "RF-GAS-01-A1",
+          "text": "Se validan importe positivo, participantes únicos y distribución exacta en centavos."
+        },
+        {
+          "id": "RF-GAS-01-A2",
+          "text": "El reparto igual distribuye el remanente de forma determinista y muestra el desglose antes de confirmar."
+        },
+        {
+          "id": "RF-GAS-01-A3",
+          "text": "La creación de solicitudes pendientes es coherente y no modifica saldos."
+        },
+        {
+          "id": "RF-GAS-01-A4",
+          "text": "El reintento no duplica solicitudes y se respetan las reglas de aceptación, rechazo y autorización."
+        },
+        {
+          "id": "RF-GAS-01-A5",
+          "text": "La inclusión del organizador es configurable y puede participar sin autogenerar una solicitud contra sí mismo."
+        }
+      ],
+      "useCases": [
+        "CU-GAS-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/money-workflow-routes.ts",
+          "backend/domain/splits.ts",
+          "web/src/lib/SplitForm.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-NOT-01",
+      "title": "Notificaciones de eventos",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe mostrar notificaciones de eventos relevantes solo al destinatario autorizado.",
+      "acceptance": [
+        {
+          "id": "RF-NOT-01-A1",
+          "text": "El servidor filtra por destinatario y no expone eventos de terceros."
+        },
+        {
+          "id": "RF-NOT-01-A2",
+          "text": "Se presenta un estado vacío cuando no existen notificaciones."
+        },
+        {
+          "id": "RF-NOT-01-A3",
+          "text": "Resoluciones inválidas o repetidas no crean eventos financieros duplicados."
+        }
+      ],
+      "useCases": [
+        "CU-NOT-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/customer-routes.ts",
+          "web/src/lib/AccountTools.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-FX-01",
+      "title": "Cotización de divisas",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir obtener una cotización FX demostrativa y aplicarla opcionalmente a un pago.",
+      "acceptance": [
+        {
+          "id": "RF-FX-01-A1",
+          "text": "La cotización indica importes, par de monedas, tasa, fecha y vigencia."
+        },
+        {
+          "id": "RF-FX-01-A2",
+          "text": "Cuando hay conversión, la cotización propia, vigente y no consumida es obligatoria; el importe debitado y recibido coincide con la cotización persistida."
+        },
+        {
+          "id": "RF-FX-01-A3",
+          "text": "Pares inválidos o cotizaciones vencidas se rechazan sin mover dinero."
+        },
+        {
+          "id": "RF-FX-01-A4",
+          "text": "La función se presenta como simulada y no afirma integración real de mercado."
+        }
+      ],
+      "useCases": [
+        "CU-FX-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-78177",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RF-REC-01",
+      "title": "Recurrencias de pago",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir programar pagos recurrentes semanales, mensuales o trimestrales y procesarlos según su calendario.",
+      "acceptance": [
+        {
+          "id": "RF-REC-01-A1",
+          "text": "La recurrencia se crea con periodicidad weekly, monthly o quarterly y próxima fecha anclada en UTC."
+        },
+        {
+          "id": "RF-REC-01-A2",
+          "text": "El propietario puede pausar, reanudar, cambiar el importe y cancelar definitivamente; otro usuario no puede hacerlo. Una recurrencia cancelada no se reactiva."
+        },
+        {
+          "id": "RF-REC-01-A3",
+          "text": "El worker de 30 segundos procesa vencimientos; con saldo insuficiente marca failed y aplica como máximo tres reintentos visibles a 1, 24 y 72 horas antes de avanzar."
+        },
+        {
+          "id": "RF-REC-01-A4",
+          "text": "Cada ocurrencia genera como máximo un pago y un asiento, sin duplicados por reintento o ejecución concurrente."
+        },
+        {
+          "id": "RF-REC-01-A5",
+          "text": "Crear o cambiar el importe exige consentimiento explícito; las instrucciones antiguas sin consentimiento quedan pausadas hasta nueva autorización."
+        },
+        {
+          "id": "RF-REC-01-A6",
+          "text": "Los periodos perdidos por indisponibilidad se saltan sin acumular cobros y se conserva el día ancla UTC."
+        }
+      ],
+      "useCases": [
+        "CU-REC-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/recurrence-routes.ts",
+          "backend/domain/recurrence-worker.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-RETRIES"
+      ]
+    },
+    {
+      "id": "RF-COM-01",
+      "title": "Pago a comercio",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir pagar a comercios registrados del sandbox y registrar el movimiento en el ledger.",
+      "acceptance": [
+        {
+          "id": "RF-COM-01-A1",
+          "text": "Se valida sesión, comercio existente, importe positivo y moneda soportada."
+        },
+        {
+          "id": "RF-COM-01-A2",
+          "text": "El pago debita al pagador y registra su contrapartida de comercio en el ledger sandbox de forma atómica; no representa liquidación real."
+        },
+        {
+          "id": "RF-COM-01-A3",
+          "text": "Comercios inexistentes, inactivos o accesos no autorizados se rechazan sin mover dinero."
+        },
+        {
+          "id": "RF-COM-01-A4",
+          "text": "La función se presenta como comercio simulado y no afirma adquirencia real."
+        }
+      ],
+      "useCases": [
+        "CU-COM-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-78177"
+      ]
+    },
+    {
+      "id": "RF-SBX-01",
+      "title": "Operaciones simuladas de sandbox",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir recargas y operaciones de sandbox claramente identificadas, sin dinero real.",
+      "acceptance": [
+        {
+          "id": "RF-SBX-01-A1",
+          "text": "Las recargas de sandbox se ejecutan solo para el usuario autenticado y dentro de límites configurados."
+        },
+        {
+          "id": "RF-SBX-01-A2",
+          "text": "La recarga acredita el saldo y registra un asiento con origen de sandbox."
+        },
+        {
+          "id": "RF-SBX-01-A3",
+          "text": "La interfaz y la API identifican la operación como simulada y no inducen a error sobre dinero real."
+        },
+        {
+          "id": "RF-SBX-01-A4",
+          "text": "Los reintentos no duplican la recarga y los errores no dejan saldo parcial."
+        }
+      ],
+      "useCases": [
+        "CU-SBX-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/routes.ts",
+          "backend/domain/payments.ts",
+          "web/src/App.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": []
+    },
+    {
+      "id": "RF-ING-01",
+      "title": "Recepción externa simulada",
+      "kind": "functional",
+      "priority": "media",
+      "statement": "El sistema debe permitir registrar un ingreso externo simulado con referencia única, sin conexión bancaria.",
+      "acceptance": [
+        {
+          "id": "RF-ING-01-A1",
+          "text": "El ingreso se registra con referencia externa única, importe exacto, moneda y estado verificable."
+        },
+        {
+          "id": "RF-ING-01-A2",
+          "text": "Una referencia externa repetida con el mismo payload devuelve la misma operación; la misma referencia con datos distintos se rechaza sin acreditar dos veces."
+        },
+        {
+          "id": "RF-ING-01-A3",
+          "text": "La operación se identifica como simulada y no afirma recepción bancaria real."
+        }
+      ],
+      "useCases": [
+        "CU-ING-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/http/money-workflow-routes.ts",
+          "web/src/lib/AccountTools.svelte"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-IDEMPOTENCY"
+      ]
+    },
+    {
+      "id": "RNF-FUN-01",
+      "title": "Adecuación funcional",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a porcentaje de criterios funcionales verificados, en el contexto matriz-funcional-v1, con umbral local >= 100 %.",
+      "acceptance": [
+        {
+          "id": "RNF-FUN-01-A1",
+          "text": "Porcentaje de criterios funcionales verificados: >= 100 %; muestra mínima 1."
+        },
+        {
+          "id": "RNF-FUN-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-TX-03"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "No se ha completado la ejecución de todos los criterios funcionales."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-PER-01",
+      "title": "Eficiencia de desempeño",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a latencia p95 de consultas privadas, en el contexto oracle-local-20-concurrentes-v1, con umbral local <= 500 ms.",
+      "acceptance": [
+        {
+          "id": "RNF-PER-01-A1",
+          "text": "Latencia p95 de consultas privadas: <= 500 ms; muestra mínima 100."
+        },
+        {
+          "id": "RNF-PER-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-04"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Falta ejecutar el ensayo de carga en el contexto declarado."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-COM-01",
+      "title": "Compatibilidad",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a recorridos críticos aprobados en navegadores objetivo, en el contexto edge-chrome-escritorio-v1, con umbral local >= 100 %.",
+      "acceptance": [
+        {
+          "id": "RNF-COM-01-A1",
+          "text": "Recorridos críticos aprobados en navegadores objetivo: >= 100 %; muestra mínima 2."
+        },
+        {
+          "id": "RNF-COM-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-AUT-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Falta evidencia de ambos navegadores en su entorno objetivo."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-INT-01",
+      "title": "Capacidad de interacción",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a tareas completadas con teclado sin ayuda, en el contexto teclado-escritorio-usuarios-v1, con umbral local >= 90 %.",
+      "acceptance": [
+        {
+          "id": "RNF-INT-01-A1",
+          "text": "Tareas completadas con teclado sin ayuda: >= 90 %; muestra mínima 10."
+        },
+        {
+          "id": "RNF-INT-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-GAS-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Pendiente estudio de usuarios finales con navegación por teclado."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-REL-01",
+      "title": "Fiabilidad",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a ensayos de rollback e idempotencia sin efectos parciales, en el contexto oracle-fallos-concurrencia-v1, con umbral local >= 100 %.",
+      "acceptance": [
+        {
+          "id": "RNF-REL-01-A1",
+          "text": "Ensayos de rollback e idempotencia sin efectos parciales: >= 100 %; muestra mínima 10."
+        },
+        {
+          "id": "RNF-REL-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-TX-03"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Pendiente campaña Oracle de fallo parcial y concurrencia."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-SEC-01",
+      "title": "Seguridad",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a accesos indebidos que exponen datos o modifican estado, en el contexto api-tres-actores-v1, con umbral local == 0 incidentes.",
+      "acceptance": [
+        {
+          "id": "RNF-SEC-01-A1",
+          "text": "Accesos indebidos que exponen datos o modifican estado: == 0 incidentes; muestra mínima 12."
+        },
+        {
+          "id": "RNF-SEC-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-AUT-01",
+        "CU-TX-05",
+        "CU-CTA-01",
+        "CU-NOT-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Pendiente ejecución de matriz completa de acceso cruzado."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-MAN-01",
+      "title": "Mantenibilidad",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a integridad de referencias y documentos generados, en el contexto catalogo-ci-v1, con umbral local == 100 %.",
+      "acceptance": [
+        {
+          "id": "RNF-MAN-01-A1",
+          "text": "Integridad de referencias y documentos generados: == 100 %; muestra mínima 1."
+        },
+        {
+          "id": "RNF-MAN-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "El control está implementado; pendiente evidencia por revisión."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-FLE-01",
+      "title": "Flexibilidad",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a instalaciones reproducibles aprobadas en entornos objetivo, en el contexto windows-linux-contenedor-v1, con umbral local >= 100 %.",
+      "acceptance": [
+        {
+          "id": "RNF-FLE-01-A1",
+          "text": "Instalaciones reproducibles aprobadas en entornos objetivo: >= 100 %; muestra mínima 2."
+        },
+        {
+          "id": "RNF-FLE-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-AUT-01",
+        "CU-SBX-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Pendiente comprobar ambos entornos reproducibles."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-SAF-01",
+      "title": "Seguridad operacional",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a flujos financieros que identifican correctamente el sandbox, en el contexto advertencias-sandbox-v1, con umbral local == 100 %.",
+      "acceptance": [
+        {
+          "id": "RNF-SAF-01-A1",
+          "text": "Flujos financieros que identifican correctamente el sandbox: == 100 %; muestra mínima 7."
+        },
+        {
+          "id": "RNF-SAF-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-COM-01",
+        "CU-ING-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "La UI actual tiene advertencias incompletas; falta revisión de todos los recorridos."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78176",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-USO-01",
+      "title": "Calidad en uso: logro de tareas",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a tareas completadas correctamente sin asistencia, en el contexto usuarios-primer-uso-v1, con umbral local >= 90 %.",
+      "acceptance": [
+        {
+          "id": "RNF-USO-01-A1",
+          "text": "Tareas completadas correctamente sin asistencia: >= 90 %; muestra mínima 10."
+        },
+        {
+          "id": "RNF-USO-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-TX-02",
+        "CU-GAS-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Pendiente evaluación real de usuarios finales."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78177",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RNF-SAT-01",
+      "title": "Calidad en uso: valoración del usuario",
+      "kind": "nonfunctional",
+      "priority": "alta",
+      "statement": "El sistema se evaluará respecto a valoración media tras completar tareas, en el contexto usuarios-primer-uso-v1, con umbral local >= 4 puntos/5.",
+      "acceptance": [
+        {
+          "id": "RNF-SAT-01-A1",
+          "text": "Valoración media tras completar tareas: >= 4 puntos/5; muestra mínima 10."
+        },
+        {
+          "id": "RNF-SAT-01-A2",
+          "text": "La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada."
+        }
+      ],
+      "useCases": [
+        "CU-TX-01",
+        "CU-GAS-01"
+      ],
+      "implementation": {
+        "status": "partial",
+        "paths": [
+          "scripts/traceability.mjs",
+          "scripts/evidence.mjs"
+        ],
+        "gaps": [
+          "Pendiente encuesta de participantes reales."
+        ]
+      },
+      "sourceIds": [
+        "S-ISO-78177",
+        "S-ISO-83467"
+      ]
+    },
+    {
+      "id": "RF-LED-01",
+      "title": "Contabilizar sobre ledger autoritativo de doble entrada",
+      "kind": "functional",
+      "priority": "alta",
+      "statement": "Toda operación con efecto monetario debe contabilizarse a través del ledger interno, con asientos inmutables, claves idempotentes y proyecciones de saldo derivadas.",
+      "acceptance": [
+        {
+          "id": "RF-LED-01-A1",
+          "text": "Cada asiento contiene al menos dos partidas no nulas y su suma es cero por moneda; FX utiliza contrapartidas explícitas por divisa."
+        },
+        {
+          "id": "RF-LED-01-A2",
+          "text": "Oracle impide modificar o eliminar asientos contabilizados y añadirles partidas; un fallo revierte asiento, proyección y efectos locales."
+        },
+        {
+          "id": "RF-LED-01-A3",
+          "text": "Repetir una operación con las mismas partidas devuelve el mismo asiento sin nuevos efectos; partidas distintas para la misma operación producen conflicto."
+        },
+        {
+          "id": "RF-LED-01-A4",
+          "text": "El saldo disponible se autoriza desde las partidas contabilizadas; la proyección se reconcilia, no hay sobregiro concurrente y las intenciones distintas no utilizan un bloqueo global por usuario."
+        }
+      ],
+      "useCases": [
+        "CU-LED-01",
+        "CU-TX-01",
+        "CU-TX-03",
+        "CU-COM-01",
+        "CU-SBX-01",
+        "CU-ING-01"
+      ],
+      "implementation": {
+        "status": "present",
+        "paths": [
+          "backend/domain/ledger.ts",
+          "backend/domain/idempotency.ts",
+          "database/migrations/006_authoritative_ledger.sql"
+        ],
+        "gaps": []
+      },
+      "sourceIds": [
+        "S-STRIPE-LEDGER"
+      ]
+    }
+  ],
+  "useCases": [
+    {
+      "id": "CU-AUT-01",
+      "title": "Iniciar sesión",
+      "actor": "Usuario registrado",
+      "preconditions": [
+        "El usuario existe y está activo.",
+        "El usuario conoce sus credenciales."
+      ],
+      "trigger": "El usuario envía usuario y contraseña desde la pantalla de acceso.",
+      "flow": [
+        "El sistema recibe las credenciales por canal local.",
+        "El servidor valida la contraseña contra el almacenamiento no reversible.",
+        "El servidor crea la sesión asociada al usuario correcto.",
+        "El sistema redirige al dashboard privado."
+      ],
+      "alternatives": [
+        "Si ya existe una sesión válida, se reutiliza o se solicita reautenticación según política."
+      ],
+      "success": "La sesión queda asociada al usuario y el dashboard muestra solo sus datos.",
+      "failure": "Las credenciales inválidas producen una respuesta no autenticada genérica sin revelar si el usuario existe."
+    },
+    {
+      "id": "CU-AUT-02",
+      "title": "Registrar cuenta",
+      "actor": "Visitante",
+      "preconditions": [
+        "El identificador no está registrado.",
+        "El visitante dispone de datos obligatorios válidos."
+      ],
+      "trigger": "El visitante envía el formulario de registro.",
+      "flow": [
+        "El sistema valida campos obligatorios y formato.",
+        "El sistema comprueba contraseña y confirmación.",
+        "El servidor verifica unicidad del identificador.",
+        "El servidor almacena la contraseña de forma no reversible y crea el usuario."
+      ],
+      "alternatives": [
+        "Si el identificador ya existe, se rechaza el registro sin crear un segundo usuario."
+      ],
+      "success": "El usuario queda registrado una sola vez y puede iniciar sesión.",
+      "failure": "Campos inválidos, confirmación distinta o duplicado producen rechazo sin registro parcial."
+    },
+    {
+      "id": "CU-TX-01",
+      "title": "Realizar pago",
+      "actor": "Usuario autenticado con saldo",
+      "preconditions": [
+        "El pagador tiene sesión válida.",
+        "El destinatario existe.",
+        "El importe es positivo y no supera el saldo."
+      ],
+      "trigger": "El pagador confirma un pago indicando destinatario, importe y moneda.",
+      "flow": [
+        "El cliente envía la orden con clave idempotente.",
+        "El servidor valida sesión, destinatario, importe, saldo y moneda.",
+        "El servidor debita al pagador, acredita al destinatario y registra el ledger en una transacción.",
+        "El servidor devuelve el resultado sin datos de terceros."
+      ],
+      "alternatives": [
+        "Si la clave ya existe con el mismo payload, se devuelve el resultado original.",
+        "Si la clave existe con payload distinto, se rechaza sin ejecutar."
+      ],
+      "success": "El pago se ejecuta exactamente una vez y los saldos y el ledger cuadran.",
+      "failure": "Validación, saldo insuficiente, falta de autorización o conflicto de idempotencia impiden el movimiento."
+    },
+    {
+      "id": "CU-TX-02",
+      "title": "Crear solicitud de pago",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El solicitante tiene sesión válida.",
+        "El destinatario existe."
+      ],
+      "trigger": "El solicitante envía una solicitud de pago.",
+      "flow": [
+        "El servidor valida sesión, destinatario, importe y moneda.",
+        "El servidor crea la solicitud en estado pendiente.",
+        "El servidor asocia la clave idempotente y devuelve la solicitud."
+      ],
+      "alternatives": [
+        "Si la clave se repite con el mismo payload, se devuelve la solicitud existente.",
+        "Si el destinatario no existe, no se crea nada."
+      ],
+      "success": "Existe una solicitud pendiente y ningún saldo cambió.",
+      "failure": "La validación o el conflicto de idempotencia impiden la creación y no dejan efectos parciales."
+    },
+    {
+      "id": "CU-TX-03",
+      "title": "Consultar historial, detalle y estado",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida.",
+        "El usuario es participante o titular del recurso consultado."
+      ],
+      "trigger": "El usuario abre el historial o solicita el detalle de una transacción.",
+      "flow": [
+        "El servidor identifica al usuario de la sesión.",
+        "El servidor filtra movimientos y solicitudes por participación.",
+        "El servidor devuelve importe, tipo, fecha, participantes y estado.",
+        "El cliente muestra el historial o detalle permitido."
+      ],
+      "alternatives": [
+        "Si no hay movimientos, se muestra un estado vacío.",
+        "Si la transacción no existe o es ajena, se responde sin revelar datos."
+      ],
+      "success": "El usuario ve solo sus movimientos con datos completos y orden estable.",
+      "failure": "Sin sesión, recurso ajeno o identificador inexistente se rechaza la consulta."
+    },
+    {
+      "id": "CU-TX-04",
+      "title": "Aceptar solicitud de pago",
+      "actor": "Destinatario de la solicitud",
+      "preconditions": [
+        "La solicitud está pendiente.",
+        "El actor es el destinatario.",
+        "El destinatario tiene saldo suficiente."
+      ],
+      "trigger": "El destinatario confirma la aceptación.",
+      "flow": [
+        "El servidor valida actor, estado y saldo.",
+        "El servidor debita al destinatario, acredita al solicitante y registra el ledger.",
+        "El servidor cambia el estado a aceptada.",
+        "El servidor devuelve el resultado idempotente."
+      ],
+      "alternatives": [
+        "Una segunda aceptación devuelve conflicto o el resultado original sin nuevo débito."
+      ],
+      "success": "El pago se ejecuta una vez y la solicitud queda aceptada.",
+      "failure": "Actor incorrecto, estado no pendiente o saldo insuficiente impiden el movimiento."
+    },
+    {
+      "id": "CU-TX-05",
+      "title": "Rechazar solicitud de pago",
+      "actor": "Destinatario de la solicitud",
+      "preconditions": [
+        "La solicitud está pendiente.",
+        "El actor es el destinatario."
+      ],
+      "trigger": "El destinatario confirma el rechazo.",
+      "flow": [
+        "El servidor valida actor y estado.",
+        "El servidor cambia el estado a rechazada.",
+        "El servidor registra el evento sin movimiento financiero."
+      ],
+      "alternatives": [
+        "Un rechazo repetido devuelve el resultado original sin efectos adicionales."
+      ],
+      "success": "La solicitud queda rechazada y ningún saldo cambió.",
+      "failure": "Actor incorrecto o estado no pendiente impiden el rechazo."
+    },
+    {
+      "id": "CU-CTA-01",
+      "title": "Administrar cuentas bancarias de prueba",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida."
+      ],
+      "trigger": "El usuario lista, asocia o deshabilita una cuenta ficticia.",
+      "flow": [
+        "El servidor valida sesión y titularidad.",
+        "El servidor valida los datos de asociación.",
+        "El servidor persiste el cambio de forma íntegra.",
+        "El sistema muestra los identificadores minimizados."
+      ],
+      "alternatives": [
+        "Si la validación falla, no se persiste ningún cambio."
+      ],
+      "success": "El usuario administra solo sus cuentas ficticias con datos minimizados.",
+      "failure": "Datos inválidos, cuenta ajena o fallo de persistencia se rechazan sin estado parcial."
+    },
+    {
+      "id": "CU-CON-01",
+      "title": "Gestionar contactos",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida."
+      ],
+      "trigger": "El usuario busca usuarios y agrega o elimina un contacto.",
+      "flow": [
+        "El servidor busca solo usuarios visibles.",
+        "El servidor muestra información mínima permitida.",
+        "El servidor crea o elimina la relación propia sin duplicados.",
+        "El servidor conserva usuarios y transacciones históricas."
+      ],
+      "alternatives": [
+        "Si la relación ya existe, no se duplica.",
+        "Si la operación no está implementada, se declara no disponible."
+      ],
+      "success": "La relación de contacto queda gestionada solo por su propietario.",
+      "failure": "Usuario no visible, relación duplicada o acceso ajeno se rechazan sin borrar historial."
+    },
+    {
+      "id": "CU-GAS-01",
+      "title": "Dividir un gasto",
+      "actor": "Organizador autenticado",
+      "preconditions": [
+        "El organizador tiene sesión válida.",
+        "El importe es positivo.",
+        "Los participantes son usuarios válidos y únicos."
+      ],
+      "trigger": "El organizador define importe, participantes y política de inclusión propia.",
+      "flow": [
+        "El sistema calcula el reparto exacto en centavos.",
+        "El sistema muestra el desglose antes de confirmar.",
+        "El organizador confirma con clave idempotente.",
+        "El servidor crea solicitudes pendientes individuales sin mover saldos."
+      ],
+      "alternatives": [
+        "Si el organizador se incluye, no se crea solicitud contra sí mismo.",
+        "Si el remanente no es divisible, se aplica el orden determinista."
+      ],
+      "success": "Las participaciones suman el total y existen solicitudes pendientes coherentes.",
+      "failure": "Importe inválido, participantes duplicados, reintento o fallo de creación no dejan solicitudes parciales."
+    },
+    {
+      "id": "CU-NOT-01",
+      "title": "Consultar notificaciones",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida."
+      ],
+      "trigger": "El usuario abre su bandeja de notificaciones.",
+      "flow": [
+        "El servidor filtra eventos por destinatario.",
+        "El servidor devuelve solo eventos permitidos.",
+        "El cliente muestra la lista o el estado vacío."
+      ],
+      "alternatives": [
+        "Si no hay eventos, se muestra un estado vacío explícito."
+      ],
+      "success": "El usuario ve solo sus notificaciones sin eventos de terceros.",
+      "failure": "Sin sesión o con error de filtrado no se exponen eventos ajenos."
+    },
+    {
+      "id": "CU-FX-01",
+      "title": "Cotizar conversión",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida.",
+        "El par de monedas es soportado."
+      ],
+      "trigger": "El usuario solicita una cotización para un pago.",
+      "flow": [
+        "El servidor valida el par y el importe.",
+        "El servidor calcula la tasa y la vigencia en unidades menores.",
+        "El servidor devuelve la cotización.",
+        "El pago puede aplicar la cotización de forma opcional."
+      ],
+      "alternatives": [
+        "Si la cotización vence, el pago se rechaza y debe solicitarse otra."
+      ],
+      "success": "El pago aplica exactamente el importe cotizado y el ledger cuadra.",
+      "failure": "Par inválido, cotización vencida o error de cálculo impiden el pago."
+    },
+    {
+      "id": "CU-REC-01",
+      "title": "Programar pago recurrente",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida.",
+        "El destinatario existe."
+      ],
+      "trigger": "El usuario crea o modifica una recurrencia.",
+      "flow": [
+        "El servidor valida periodicidad, importe, moneda y fecha UTC.",
+        "El servidor persiste la recurrencia y su próxima ejecución.",
+        "El worker de 30 segundos procesa las ocurrencias vencidas.",
+        "El sistema registra pago y asiento una sola vez por ocurrencia."
+      ],
+      "alternatives": [
+        "Con saldo insuficiente se marca failed y se aplican hasta tres reintentos visibles 1h/24h/72h.",
+        "El propietario puede pausar o reanudar; otro usuario no."
+      ],
+      "success": "La recurrencia se ejecuta según calendario UTC con efectos únicos y visibles.",
+      "failure": "Datos inválidos, falta de autorización o fallo de ejecución no duplican pagos ni dejan estados inconsistentes."
+    },
+    {
+      "id": "CU-COM-01",
+      "title": "Pagar a comercio",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida.",
+        "El comercio existe y está activo."
+      ],
+      "trigger": "El usuario confirma un pago a comercio.",
+      "flow": [
+        "El servidor valida sesión, comercio, importe y moneda.",
+        "El servidor debita al pagador y acredita al comercio.",
+        "El servidor registra el asiento en el ledger.",
+        "El sistema muestra el resultado como operación simulada."
+      ],
+      "alternatives": [
+        "Si el comercio no existe o está inactivo, se rechaza sin movimiento."
+      ],
+      "success": "El pago al comercio se registra una vez y los saldos cuadran.",
+      "failure": "Validación, saldo insuficiente o comercio inválido impiden el movimiento."
+    },
+    {
+      "id": "CU-SBX-01",
+      "title": "Realizar operaciones simuladas",
+      "actor": "Usuario autenticado",
+      "preconditions": [
+        "El usuario tiene sesión válida."
+      ],
+      "trigger": "El usuario solicita una recarga u operación de sandbox.",
+      "flow": [
+        "El servidor valida sesión y límites.",
+        "El servidor acredita el saldo simulado y registra el asiento con origen sandbox.",
+        "El sistema identifica la operación como simulada."
+      ],
+      "alternatives": [
+        "Un reintento con la misma clave no duplica la recarga."
+      ],
+      "success": "El saldo simulado y el ledger reflejan una única operación identificada como sandbox.",
+      "failure": "Sin sesión, fuera de límite o con error de persistencia no se acredita saldo."
+    },
+    {
+      "id": "CU-ING-01",
+      "title": "Recibir ingreso externo simulado",
+      "actor": "Usuario autenticado o proceso de sandbox",
+      "preconditions": [
+        "Existe una referencia externa única.",
+        "La cuenta destino pertenece al usuario autorizado."
+      ],
+      "trigger": "Se registra un ingreso externo simulado.",
+      "flow": [
+        "El servidor valida referencia, importe, moneda y cuenta destino.",
+        "El servidor verifica que la referencia no haya sido aplicada.",
+        "El servidor acredita el saldo y registra el asiento de origen externo simulado.",
+        "El sistema muestra la operación como simulada."
+      ],
+      "alternatives": [
+        "Si la referencia ya existe con el mismo payload, se devuelve el resultado original.",
+        "Si la referencia existe con datos distintos, se rechaza."
+      ],
+      "success": "El ingreso se aplica una sola vez con referencia única y trazabilidad.",
+      "failure": "Referencia duplicada en conflicto, datos inválidos o cuenta ajena impiden el crédito."
+    },
+    {
+      "id": "CU-LED-01",
+      "title": "Contabilizar una operación confirmada",
+      "actor": "Sistema, por instrucción de un usuario autorizado",
+      "preconditions": [
+        "Operación confirmada y autorizada; importes exactos y cuentas sandbox válidas."
+      ],
+      "trigger": "El flujo confirmado solicita contabilización.",
+      "flow": [
+        "Reservar la intención por acción y clave, y comparar la huella del payload.",
+        "Construir las partidas con contrapartidas explícitas y validar suma cero por moneda.",
+        "Bloquear las cuentas afectadas en orden estable y comprobar disponibilidad desde el ledger.",
+        "Persistir el asiento, sus partidas y su contabilización, y actualizar las proyecciones de saldo.",
+        "Persistir estado y notificaciones locales y confirmar la transacción corta."
+      ],
+      "alternatives": [
+        "Misma intención y payload: devolver el resultado guardado.",
+        "Payload distinto, asiento desbalanceado o saldo insuficiente: rechazar y revertir todos los efectos.",
+        "Fallo técnico antes del commit: revertir; el mismo comando puede reintentarse sin duplicar efectos."
+      ],
+      "success": "Un único asiento contabilizado, balanceado e inmutable; saldo proyectado conciliado y operación trazable.",
+      "failure": "No queda efecto financiero parcial ni una intención completada sin su asiento."
+    }
+  ],
+  "tests": [
+    {
+      "id": "CP-AUT-01",
+      "title": "Inicio de sesión válido asocia la sesión al usuario",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-AUT-01-A1"
+      ],
+      "preconditions": [
+        "Usuario sintético registrado y activo."
+      ],
+      "data": "{\"usuario\":\"ana.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\"}",
+      "steps": [
+        "Enviar credenciales válidas al endpoint de login.",
+        "Consultar el recurso privado con la sesión obtenida."
+      ],
+      "expected": [
+        "La autenticación responde con sesión válida.",
+        "El recurso privado devuelve datos de ana.sandbox y no de otro usuario."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-AUT-02",
+      "title": "Credenciales inválidas y acceso privado sin sesión",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-AUT-01-A2",
+        "RF-AUT-01-A3"
+      ],
+      "preconditions": [
+        "Usuario sintético registrado.",
+        "No existe sesión activa."
+      ],
+      "data": "{\"usuario\":\"ana.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\"}",
+      "steps": [
+        "Enviar contraseña incorrecta.",
+        "Intentar acceder a un recurso privado sin sesión.",
+        "Comparar mensajes para usuario existente e inexistente."
+      ],
+      "expected": [
+        "La respuesta es no autenticada y genérica.",
+        "El recurso privado rechaza el acceso.",
+        "No se puede deducir la existencia del usuario."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-AUT-03",
+      "title": "Registro válido con contraseña protegida",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-AUT-02-A1",
+        "RF-AUT-02-A3"
+      ],
+      "preconditions": [
+        "Identificador sintético no registrado."
+      ],
+      "data": "{\"usuario\":\"nuevo.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\",\"confirmacion\":\"Sintetica-02\"}",
+      "steps": [
+        "Registrar el usuario con confirmación coincidente.",
+        "Consultar el almacenamiento de credenciales.",
+        "Iniciar sesión con la contraseña registrada."
+      ],
+      "expected": [
+        "El registro se completa.",
+        "La contraseña no se almacena ni se devuelve en claro.",
+        "El login posterior funciona."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-AUT-04",
+      "title": "Registro rechazado por confirmación distinta o duplicado",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-AUT-02-A1",
+        "RF-AUT-02-A2",
+        "RF-AUT-01-A2"
+      ],
+      "preconditions": [
+        "Existe un usuario sintético registrado."
+      ],
+      "data": "{\"usuario\":\"ana.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\",\"confirmacion\":\"Sintetica-04\"}",
+      "steps": [
+        "Enviar registro con confirmación distinta.",
+        "Enviar registro con identificador ya existente.",
+        "Consultar la cantidad de usuarios."
+      ],
+      "expected": [
+        "Ambos registros se rechazan.",
+        "No se crea un segundo usuario ni un registro parcial."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-AUT-04]"
+      }
+    },
+    {
+      "id": "CP-TX-01",
+      "title": "Pago válido debita, acredita y registra ledger",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-01-A1",
+        "RF-TX-01-A2",
+        "RF-TX-01-A4",
+        "RF-TX-01-A6"
+      ],
+      "preconditions": [
+        "Pagador y destinatario sintéticos existen.",
+        "El pagador tiene saldo suficiente."
+      ],
+      "data": "{\"pagador\":\"ana.sandbox\",\"destinatario\":\"bruno.sandbox\",\"importe\":\"10.00\",\"moneda\":\"USD\",\"clave\":\"pago-001\"}",
+      "steps": [
+        "Ejecutar el pago con sesión del pagador.",
+        "Consultar ambos saldos.",
+        "Consultar el ledger."
+      ],
+      "expected": [
+        "El pago se acepta.",
+        "El pagador disminuye 10.00 y el destinatario aumenta 10.00.",
+        "Existe un único asiento coherente."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-02",
+      "title": "Pago rechazado por saldo, autorización o conflicto de clave",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-01-A3",
+        "RF-TX-01-A4",
+        "RF-TX-01-A5"
+      ],
+      "preconditions": [
+        "Pagador con saldo insuficiente y destinatario existente.",
+        "Existe una clave idempotente usada con otro payload."
+      ],
+      "data": "{\"importe\":\"999999.00\",\"moneda\":\"USD\",\"clave\":\"pago-001\"}",
+      "steps": [
+        "Intentar pagar por encima del saldo.",
+        "Intentar usar una cuenta ajena.",
+        "Reutilizar la clave con importe distinto."
+      ],
+      "expected": [
+        "Ninguna operación mueve dinero.",
+        "El conflicto de idempotencia se informa sin datos de terceros.",
+        "No se crea un segundo asiento."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-03",
+      "title": "Solicitud de pago válida queda pendiente sin mover saldo",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-02-A1",
+        "RF-TX-02-A2",
+        "RF-TX-02-A5"
+      ],
+      "preconditions": [
+        "Solicitante y destinatario sintéticos existen."
+      ],
+      "data": "{\"solicitante\":\"ana.sandbox\",\"destinatario\":\"bruno.sandbox\",\"importe\":\"25.50\",\"moneda\":\"USD\"}",
+      "steps": [
+        "Crear la solicitud.",
+        "Consultar la solicitud.",
+        "Consultar saldos y ledger."
+      ],
+      "expected": [
+        "La solicitud queda pendiente.",
+        "Los saldos no cambian.",
+        "No existe asiento financiero por la creación."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-04",
+      "title": "Solicitud rechazada por destinatario inexistente o duplicado idempotente",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-02-A1",
+        "RF-TX-02-A3",
+        "RF-TX-02-A4"
+      ],
+      "preconditions": [
+        "Solicitante autenticado."
+      ],
+      "data": "{\"destinatario\":\"no.existe\",\"importe\":\"10.00\",\"clave\":\"solicitud-001\"}",
+      "steps": [
+        "Crear solicitud con destinatario inexistente.",
+        "Repetir una solicitud válida con la misma clave y payload."
+      ],
+      "expected": [
+        "La primera operación no crea solicitud.",
+        "La repetición devuelve la solicitud original sin duplicarla.",
+        "No hay notificaciones parciales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-05",
+      "title": "Consulta de solicitud propia devuelve datos completos",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-03-A1",
+        "RF-TX-03-A2"
+      ],
+      "preconditions": [
+        "Existe una solicitud pendiente entre dos usuarios sintéticos."
+      ],
+      "data": "{\"solicitud\":\"solicitud-001\",\"actor\":\"bruno.sandbox\"}",
+      "steps": [
+        "Consultar la solicitud como destinatario.",
+        "Verificar los campos devueltos."
+      ],
+      "expected": [
+        "Se devuelve importe, tipo, fecha, participantes y estado.",
+        "El actor autorizado puede consultarla."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-06",
+      "title": "Consulta de solicitud ajena o inexistente se rechaza",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-03-A1",
+        "RF-TX-03-A3"
+      ],
+      "preconditions": [
+        "Existe una solicitud de ana.sandbox.",
+        "Existe un tercero autenticado."
+      ],
+      "data": "{\"solicitud\":\"solicitud-001\",\"actor\":\"carla.sandbox\"}",
+      "steps": [
+        "Consultar como tercero.",
+        "Consultar un identificador inexistente."
+      ],
+      "expected": [
+        "Ambas consultas se rechazan.",
+        "No se revela si la solicitud existe ni sus datos."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-07",
+      "title": "Aceptación válida ejecuta el pago una vez",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-04-A1",
+        "RF-TX-04-A2",
+        "RF-TX-04-A4"
+      ],
+      "preconditions": [
+        "Solicitud pendiente con destinatario con saldo suficiente."
+      ],
+      "data": "{\"solicitud\":\"solicitud-002\",\"actor\":\"bruno.sandbox\",\"importe\":\"25.50\"}",
+      "steps": [
+        "Aceptar la solicitud.",
+        "Consultar saldos, estado y ledger."
+      ],
+      "expected": [
+        "El estado cambia a aceptada.",
+        "Los saldos se mueven exactamente.",
+        "Existe un único asiento."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-08",
+      "title": "Aceptación repetida no duplica el débito",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-04-A1",
+        "RF-TX-04-A3"
+      ],
+      "preconditions": [
+        "Solicitud ya aceptada."
+      ],
+      "data": "{\"solicitud\":\"solicitud-002\",\"actor\":\"bruno.sandbox\"}",
+      "steps": [
+        "Repetir la aceptación.",
+        "Comparar saldos y cantidad de asientos."
+      ],
+      "expected": [
+        "La repetición devuelve conflicto o resultado idempotente.",
+        "No hay segundo débito ni asiento nuevo."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-09",
+      "title": "Historial propio muestra movimientos permitidos",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-09-A1",
+        "RF-TX-09-A2",
+        "RF-TX-09-A3",
+        "RF-TX-10-A1",
+        "RF-TX-10-A2"
+      ],
+      "preconditions": [
+        "ana.sandbox tiene pagos y solicitudes propios.",
+        "Existen movimientos de otro usuario."
+      ],
+      "data": "{\"actor\":\"ana.sandbox\"}",
+      "steps": [
+        "Consultar el historial.",
+        "Verificar campos y orden.",
+        "Avanzar de página si existe paginación."
+      ],
+      "expected": [
+        "Solo aparecen movimientos propios.",
+        "Cada registro muestra importe, tipo, fecha, participantes y estado.",
+        "No hay duplicados entre páginas."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-TX-09]"
+      }
+    },
+    {
+      "id": "CP-TX-10",
+      "title": "Historial no expone movimientos privados ajenos",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-09-A1",
+        "RF-TX-09-A3"
+      ],
+      "preconditions": [
+        "Dos usuarios con movimientos distintos."
+      ],
+      "data": "{\"actor\":\"carla.sandbox\"}",
+      "steps": [
+        "Consultar el historial de carla.",
+        "Buscar identificadores de movimientos de ana."
+      ],
+      "expected": [
+        "No aparece ningún movimiento ajeno.",
+        "La paginación no filtra registros de otros usuarios."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-11",
+      "title": "Detalle autorizado muestra la transacción completa",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-10-A1",
+        "RF-TX-10-A2",
+        "RF-TX-10-A3"
+      ],
+      "preconditions": [
+        "Existe una transacción con participante autorizado."
+      ],
+      "data": "{\"transaccion\":\"tx-001\",\"actor\":\"ana.sandbox\"}",
+      "steps": [
+        "Consultar el detalle como participante.",
+        "Verificar acciones disponibles."
+      ],
+      "expected": [
+        "Se devuelve el detalle permitido.",
+        "Las acciones corresponden al actor y estado."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-12",
+      "title": "Detalle inexistente o ajeno se rechaza",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-10-A2",
+        "RF-TX-10-A3"
+      ],
+      "preconditions": [
+        "Existe una transacción de ana.sandbox."
+      ],
+      "data": "{\"transaccion\":\"tx-001\",\"actor\":\"carla.sandbox\"}",
+      "steps": [
+        "Consultar como tercero.",
+        "Consultar identificador inexistente."
+      ],
+      "expected": [
+        "Se rechaza sin revelar datos.",
+        "No se ofrecen acciones de aceptación o rechazo."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-21",
+      "title": "Rechazo válido deja la solicitud rechazada sin mover dinero",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-05-A1",
+        "RF-TX-05-A2"
+      ],
+      "preconditions": [
+        "Solicitud pendiente con destinatario autenticado."
+      ],
+      "data": "{\"solicitud\":\"solicitud-003\",\"actor\":\"bruno.sandbox\"}",
+      "steps": [
+        "Rechazar la solicitud.",
+        "Consultar estado, saldos y ledger."
+      ],
+      "expected": [
+        "El estado es rechazada.",
+        "No hay débito, crédito ni asiento financiero."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-22",
+      "title": "Rechazo repetido o por actor incorrecto no tiene efectos",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-05-A1",
+        "RF-TX-05-A3"
+      ],
+      "preconditions": [
+        "Solicitud rechazada.",
+        "Existe un tercero autenticado."
+      ],
+      "data": "{\"solicitud\":\"solicitud-003\",\"actor\":\"carla.sandbox\"}",
+      "steps": [
+        "Intentar rechazar como tercero.",
+        "Repetir el rechazo como destinatario."
+      ],
+      "expected": [
+        "El tercero recibe rechazo de autorización.",
+        "La repetición no crea eventos ni asientos adicionales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-23",
+      "title": "Reintento con misma clave y payload no duplica el pago",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-06-A1",
+        "RF-TX-06-A2"
+      ],
+      "preconditions": [
+        "Pago previo ejecutado con clave conocida."
+      ],
+      "data": "{\"clave\":\"pago-001\",\"payload\":\"ana->bruno 10.00 USD\"}",
+      "steps": [
+        "Repetir exactamente la misma solicitud.",
+        "Comparar saldos, asientos y respuesta."
+      ],
+      "expected": [
+        "Se devuelve el resultado original.",
+        "No hay segundo débito ni asiento."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-24",
+      "title": "Misma clave con payload distinto se rechaza",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-06-A3"
+      ],
+      "preconditions": [
+        "Clave usada previamente con un pago."
+      ],
+      "data": "{\"clave\":\"pago-001\",\"payload\":\"ana->bruno 99.00 USD\"}",
+      "steps": [
+        "Reutilizar la clave con otro importe.",
+        "Consultar saldos y ledger."
+      ],
+      "expected": [
+        "La operación se rechaza por conflicto.",
+        "No se ejecuta el nuevo pago ni se altera el original."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-25",
+      "title": "Importes y saldos se calculan en unidades menores exactas",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-07-A1",
+        "RF-TX-07-A2"
+      ],
+      "preconditions": [
+        "Dominio de dinero disponible para prueba."
+      ],
+      "data": "{\"importe\":\"10.10\",\"moneda\":\"USD\",\"unidadesMenores\":1010}",
+      "steps": [
+        "Convertir el importe al dominio.",
+        "Sumar y restar repetidamente.",
+        "Comparar con el valor decimal esperado."
+      ],
+      "expected": [
+        "La representación es entera con dos decimales.",
+        "No aparece error de punto flotante."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-18",
+      "title": "Total de participaciones debe igualar el importe exacto",
+      "level": "unit",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-07-A3"
+      ],
+      "preconditions": [
+        "Reparto con remanente no divisible."
+      ],
+      "data": "{\"total\":\"10.00\",\"participantes\":3}",
+      "steps": [
+        "Calcular participaciones.",
+        "Sumar los valores y comparar con 10.00.",
+        "Introducir un valor con más de dos decimales."
+      ],
+      "expected": [
+        "La suma es exactamente 10.00.",
+        "Un valor con precisión inválida se rechaza."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-19",
+      "title": "Operación privada exige sesión y titularidad",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-08-A1",
+        "RF-TX-08-A3"
+      ],
+      "preconditions": [
+        "Dos usuarios sintéticos con recursos propios."
+      ],
+      "data": "{\"actor\":\"ana.sandbox\",\"recurso\":\"propio\"}",
+      "steps": [
+        "Acceder con sesión de ana a un recurso propio.",
+        "Repetir la llamada directa sin pasar por la interfaz."
+      ],
+      "expected": [
+        "El acceso propio se autoriza en servidor.",
+        "La autorización no depende de la interfaz."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-20",
+      "title": "Operación ajena devuelve rechazo genérico",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-08-A1",
+        "RF-TX-08-A2",
+        "RF-TX-08-A3"
+      ],
+      "preconditions": [
+        "Recurso perteneciente a otro usuario."
+      ],
+      "data": "{\"actor\":\"carla.sandbox\",\"recurso\":\"de ana\"}",
+      "steps": [
+        "Invocar el endpoint sin sesión.",
+        "Invocar con sesión de carla sobre el recurso de ana.",
+        "Comparar respuestas con un recurso inexistente."
+      ],
+      "expected": [
+        "Sin sesión se responde 401.",
+        "Con sesión ajena se responde 403.",
+        "No se revela la existencia del recurso."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-CTA-01",
+      "title": "Usuario administra sus cuentas ficticias",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-CTA-01-A1",
+        "RF-CTA-01-A2",
+        "RF-CTA-01-A3",
+        "RF-CTA-01-A4"
+      ],
+      "preconditions": [
+        "Usuario autenticado sin cuentas asociadas."
+      ],
+      "data": "{\"titular\":\"ana.sandbox\",\"cuenta\":\"ficticia-001\"}",
+      "steps": [
+        "Listar cuentas.",
+        "Asociar una cuenta ficticia válida.",
+        "Deshabilitarla."
+      ],
+      "expected": [
+        "La cuenta aparece solo para su titular.",
+        "Los datos se validan antes de persistir.",
+        "La baja se refleja sin afectar a terceros."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-CTA-01]"
+      }
+    },
+    {
+      "id": "CP-CTA-02",
+      "title": "Cuenta ajena o datos inválidos se rechazan",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-CTA-01-A2",
+        "RF-CTA-01-A3",
+        "RF-CTA-01-A4"
+      ],
+      "preconditions": [
+        "Existe una cuenta ficticia de ana.sandbox."
+      ],
+      "data": "{\"actor\":\"carla.sandbox\",\"cuenta\":\"ficticia-001\"}",
+      "steps": [
+        "Intentar modificar la cuenta de ana.",
+        "Asociar datos inválidos.",
+        "Revisar la presentación de la función."
+      ],
+      "expected": [
+        "La modificación ajena se rechaza.",
+        "Los datos inválidos no dejan estado parcial.",
+        "La UI indica que la cuenta es ficticia y sin conexión bancaria."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-CON-01",
+      "title": "Búsqueda de usuarios visibles con datos mínimos",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-CON-01-A1",
+        "RF-CON-01-A3",
+        "RF-CON-01-A2"
+      ],
+      "preconditions": [
+        "Existen usuarios con distinta visibilidad."
+      ],
+      "data": "{\"consulta\":\"bru\",\"actor\":\"ana.sandbox\"}",
+      "steps": [
+        "Buscar usuarios.",
+        "Revisar los campos devueltos."
+      ],
+      "expected": [
+        "Solo aparecen usuarios visibles.",
+        "No se exponen datos privados innecesarios.",
+        "Las altas/bajas no se anuncian como disponibles si no lo están."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-CON-01]"
+      }
+    },
+    {
+      "id": "CP-CON-02",
+      "title": "Contacto duplicado o eliminación no borra historial",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-CON-01-A1",
+        "RF-CON-01-A2"
+      ],
+      "preconditions": [
+        "ana.sandbox ya tiene a bruno como contacto.",
+        "Existe una transacción histórica entre ambos."
+      ],
+      "data": "{\"actor\":\"ana.sandbox\",\"contacto\":\"bruno.sandbox\"}",
+      "steps": [
+        "Intentar agregar el mismo contacto.",
+        "Eliminar el contacto.",
+        "Consultar usuario y transacción histórica."
+      ],
+      "expected": [
+        "El duplicado no se crea.",
+        "La eliminación no borra al usuario ni la transacción.",
+        "No se expone información privada."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-GAS-01",
+      "title": "División 10 entre 3 con remanente determinista y vista previa",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-GAS-01-A1",
+        "RF-GAS-01-A2"
+      ],
+      "preconditions": [
+        "Tres participantes únicos y orden estable."
+      ],
+      "data": "{\"total\":\"10.00\",\"participantes\":[\"ana\",\"bruno\",\"carla\"]}",
+      "steps": [
+        "Calcular el reparto.",
+        "Mostrar la vista previa.",
+        "Sumar las participaciones."
+      ],
+      "expected": [
+        "Resultado 3.34, 3.33 y 3.33.",
+        "La vista previa aparece antes de confirmar.",
+        "La suma es 10.00."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-GAS-02",
+      "title": "División rechaza importe inválido o participantes duplicados",
+      "level": "unit",
+      "polarity": "negative",
+      "criteria": [
+        "RF-GAS-01-A1",
+        "RF-GAS-01-A2"
+      ],
+      "preconditions": [
+        "Lista de participantes de prueba."
+      ],
+      "data": "{\"total\":\"0.00\",\"participantes\":[\"ana\",\"ana\"]}",
+      "steps": [
+        "Calcular con importe cero.",
+        "Calcular con participantes repetidos.",
+        "Calcular con tres decimales."
+      ],
+      "expected": [
+        "Los tres casos se rechazan.",
+        "No se genera desglose ni solicitud."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-GAS-03",
+      "title": "Creación de solicitudes no modifica saldos",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-GAS-01-A3"
+      ],
+      "preconditions": [
+        "Organizador con saldo y participantes válidos."
+      ],
+      "data": "{\"total\":\"10.00\",\"participantes\":[\"bruno\",\"carla\"]}",
+      "steps": [
+        "Confirmar la división.",
+        "Consultar solicitudes, saldos y ledger."
+      ],
+      "expected": [
+        "Se crean solicitudes pendientes individuales.",
+        "Los saldos permanecen iguales.",
+        "No hay asientos financieros en la creación."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-GAS-06",
+      "title": "Reintento de división no duplica solicitudes",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-GAS-01-A4"
+      ],
+      "preconditions": [
+        "División ya confirmada con clave conocida."
+      ],
+      "data": "{\"clave\":\"split-001\",\"total\":\"10.00\"}",
+      "steps": [
+        "Repetir la confirmación con la misma clave y payload.",
+        "Contar solicitudes y asientos."
+      ],
+      "expected": [
+        "Se devuelve el resultado original.",
+        "No se duplican solicitudes ni asientos.",
+        "Las reglas de aceptación y rechazo siguen vigentes."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-GAS-07",
+      "title": "Organizador incluido no se autosolicita",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-GAS-01-A5"
+      ],
+      "preconditions": [
+        "Organizador autenticado y participantes válidos."
+      ],
+      "data": "{\"organizador\":\"ana\",\"incluirOrganizador\":true,\"total\":\"10.00\"}",
+      "steps": [
+        "Configurar inclusión del organizador.",
+        "Confirmar la división.",
+        "Consultar solicitudes creadas."
+      ],
+      "expected": [
+        "El organizador participa en el reparto.",
+        "No se crea una solicitud de ana contra ana.",
+        "La suma sigue siendo exacta."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-NOT-01",
+      "title": "Bandeja propia muestra notificaciones o estado vacío",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-NOT-01-A1",
+        "RF-NOT-01-A2",
+        "RF-NOT-01-A3"
+      ],
+      "preconditions": [
+        "Un usuario con eventos y otro sin eventos."
+      ],
+      "data": "{\"actor\":\"ana.sandbox\"}",
+      "steps": [
+        "Consultar la bandeja con eventos.",
+        "Consultar la bandeja de un usuario sin eventos."
+      ],
+      "expected": [
+        "Solo aparecen eventos de ana.",
+        "El usuario sin eventos ve un estado vacío explícito."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-NOT-01]"
+      }
+    },
+    {
+      "id": "CP-NOT-02",
+      "title": "Resolución repetida no duplica notificaciones ni asientos",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-NOT-01-A1",
+        "RF-NOT-01-A3"
+      ],
+      "preconditions": [
+        "Solicitud ya resuelta."
+      ],
+      "data": "{\"solicitud\":\"solicitud-004\",\"actor\":\"bruno.sandbox\"}",
+      "steps": [
+        "Repetir la resolución.",
+        "Consultar notificaciones y ledger del destinatario."
+      ],
+      "expected": [
+        "No se crea una segunda notificación.",
+        "No se crea un segundo asiento.",
+        "No se exponen eventos de terceros."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-FX-01",
+      "title": "Cotización válida se aplica exactamente al pago",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-FX-01-A1",
+        "RF-FX-01-A2",
+        "RF-FX-01-A4"
+      ],
+      "preconditions": [
+        "Usuario con saldo y par de monedas soportado."
+      ],
+      "data": "{\"origen\":\"USD\",\"destino\":\"COP\",\"importe\":\"10.00\"}",
+      "steps": [
+        "Solicitar cotización.",
+        "Pagar aplicando la cotización.",
+        "Comparar importe debitado con la cotización."
+      ],
+      "expected": [
+        "La cotización incluye tasa, fecha y vigencia.",
+        "El débito coincide exactamente con lo cotizado.",
+        "La UI indica que es demostrativa."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-FX-02",
+      "title": "Cotización vencida o par inválido no mueve dinero",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-FX-01-A2",
+        "RF-FX-01-A3",
+        "RF-FX-01-A4"
+      ],
+      "preconditions": [
+        "Cotización emitida fuera de vigencia."
+      ],
+      "data": "{\"par\":\"USD/XXX\",\"cotizacionVencida\":true}",
+      "steps": [
+        "Solicitar un par inválido.",
+        "Pagar con una cotización vencida.",
+        "Consultar saldos."
+      ],
+      "expected": [
+        "Ambas operaciones se rechazan.",
+        "Ningún saldo cambia.",
+        "No se afirma integración real de mercado."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/money-scenarios.integration.test.ts",
+        "pattern": "[CP-FX-02]"
+      }
+    },
+    {
+      "id": "CP-REC-01",
+      "title": "Recurrencia semanal se crea con próxima fecha UTC",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-REC-01-A1",
+        "RF-REC-01-A5"
+      ],
+      "preconditions": [
+        "Usuario autenticado y destinatario existente."
+      ],
+      "data": "{\"periodicidad\":\"weekly\",\"importe\":\"5.00\",\"moneda\":\"USD\",\"ancla\":\"2026-11-04T00:00:00Z\"}",
+      "steps": [
+        "Crear la recurrencia.",
+        "Consultar la próxima ejecución."
+      ],
+      "expected": [
+        "Se persiste weekly.",
+        "La próxima fecha respeta el ancla UTC.",
+        "No se ejecuta un pago inmediato fuera de calendario."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-REC-02",
+      "title": "Patch de recurrencia ajena o ejecución concurrente no duplica pagos",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-REC-01-A2",
+        "RF-REC-01-A4"
+      ],
+      "preconditions": [
+        "Recurrencia de ana.sandbox vencida."
+      ],
+      "data": "{\"actor\":\"carla.sandbox\",\"recurrencia\":\"rec-001\"}",
+      "steps": [
+        "Intentar pausar la recurrencia ajena.",
+        "Forzar dos ejecuciones concurrentes de la misma ocurrencia."
+      ],
+      "expected": [
+        "El patch ajeno se rechaza.",
+        "Solo se crea un pago y un asiento por ocurrencia."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-REC-03",
+      "title": "Saldo insuficiente aplica tres reintentos visibles antes de avanzar",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-REC-01-A3",
+        "RF-REC-01-A6"
+      ],
+      "preconditions": [
+        "Recurrencia vencida con saldo insuficiente."
+      ],
+      "data": "{\"recurrencia\":\"rec-002\",\"saldo\":\"0.00\",\"reintentos\":[1,24,72]}",
+      "steps": [
+        "Ejecutar el worker.",
+        "Consultar estado y reintentos programados.",
+        "Agotar los tres reintentos."
+      ],
+      "expected": [
+        "La recurrencia se marca failed.",
+        "Los reintentos son visibles a 1h, 24h y 72h.",
+        "Tras el tercero avanza sin reintentos adicionales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-COM-01",
+      "title": "Pago a comercio válido debita y acredita",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-COM-01-A1",
+        "RF-COM-01-A2"
+      ],
+      "preconditions": [
+        "Comercio activo y pagador con saldo."
+      ],
+      "data": "{\"comercio\":\"cafe.sandbox\",\"importe\":\"7.50\",\"moneda\":\"USD\"}",
+      "steps": [
+        "Ejecutar el pago a comercio.",
+        "Consultar saldos y ledger."
+      ],
+      "expected": [
+        "El pagador disminuye 7.50.",
+        "El comercio aumenta 7.50.",
+        "Existe un asiento coherente."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-COM-02",
+      "title": "Comercio inexistente o inactivo no recibe dinero",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-COM-01-A1",
+        "RF-COM-01-A3",
+        "RF-COM-01-A4"
+      ],
+      "preconditions": [
+        "Existe un comercio inactivo."
+      ],
+      "data": "{\"comercio\":\"inactivo.sandbox\",\"importe\":\"7.50\"}",
+      "steps": [
+        "Pagar a comercio inactivo.",
+        "Pagar a comercio inexistente.",
+        "Revisar la presentación."
+      ],
+      "expected": [
+        "Ambos pagos se rechazan sin mover dinero.",
+        "No se crea asiento.",
+        "La UI indica comercio simulado."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-SBX-01",
+      "title": "Recarga de sandbox acredita saldo y asiento de origen simulado",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-SBX-01-A1",
+        "RF-SBX-01-A2"
+      ],
+      "preconditions": [
+        "Usuario autenticado dentro del límite."
+      ],
+      "data": "{\"actor\":\"ana.sandbox\",\"importe\":\"50.00\",\"moneda\":\"USD\"}",
+      "steps": [
+        "Solicitar recarga.",
+        "Consultar saldo y ledger."
+      ],
+      "expected": [
+        "El saldo aumenta 50.00.",
+        "Se registra un asiento con origen sandbox.",
+        "La operación se identifica como simulada."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-SBX-02",
+      "title": "Recarga fuera de límite o reintentada no duplica saldo",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-SBX-01-A3",
+        "RF-SBX-01-A4"
+      ],
+      "preconditions": [
+        "Usuario con recarga previa y clave conocida."
+      ],
+      "data": "{\"importe\":\"999999.00\",\"clave\":\"topup-001\"}",
+      "steps": [
+        "Solicitar recarga fuera de límite.",
+        "Repetir la recarga válida con la misma clave.",
+        "Consultar saldo."
+      ],
+      "expected": [
+        "La recarga fuera de límite se rechaza.",
+        "La repetición no duplica el crédito.",
+        "La UI no simula dinero real."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-ING-01",
+      "title": "Ingreso externo simulado con referencia única",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-ING-01-A1",
+        "RF-ING-01-A3",
+        "RF-ING-01-A2"
+      ],
+      "preconditions": [
+        "Cuenta destino autorizada."
+      ],
+      "data": "{\"referencia\":\"EXT-001\",\"importe\":\"100.00\",\"moneda\":\"USD\"}",
+      "steps": [
+        "Registrar el ingreso.",
+        "Consultar saldo, asiento y presentación."
+      ],
+      "expected": [
+        "El saldo aumenta exactamente 100.00.",
+        "El asiento conserva la referencia única.",
+        "La operación se muestra como simulada."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-ING-01]"
+      }
+    },
+    {
+      "id": "CP-ING-02",
+      "title": "Referencia externa duplicada en conflicto no acredita dos veces",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-ING-01-A1",
+        "RF-ING-01-A2"
+      ],
+      "preconditions": [
+        "Referencia EXT-001 ya aplicada."
+      ],
+      "data": "{\"referencia\":\"EXT-001\",\"importe\":\"150.00\"}",
+      "steps": [
+        "Repetir con el mismo payload.",
+        "Repetir con importe distinto.",
+        "Consultar saldo y asientos."
+      ],
+      "expected": [
+        "La repetición idéntica devuelve el resultado original.",
+        "El conflicto se rechaza.",
+        "Solo existe un crédito y un asiento."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-13",
+      "title": "Validar importes límite y formato monetario",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-07-A1",
+        "RF-TX-07-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "0; -1; 0.01; 1.001; notación exponencial; máximo de 12 dígitos enteros.",
+      "steps": [
+        "Introducir cada importe en el dominio y API.",
+        "Comparar aceptación con el contrato de dos decimales."
+      ],
+      "expected": [
+        "Solo importes positivos de formato y rango admitidos son aceptados; se conserva el valor exacto."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-14",
+      "title": "Persistir y recuperar importes exactos",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-07-A1",
+        "RF-TX-07-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Importes sintéticos de borde y representativos en USD, COP y CRC.",
+      "steps": [
+        "Registrar un pago válido y consultar su detalle y saldos.",
+        "Intentar persistir un importe no admitido."
+      ],
+      "expected": [
+        "Entrada, persistencia, débito, crédito y presentación coinciden; entradas inválidas no producen efectos."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-TX-15",
+      "title": "Resolver repetida y concurrentemente una solicitud",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-04-A3",
+        "RF-TX-05-A3",
+        "RF-TX-06-A2",
+        "RF-TX-06-A4"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Solicitudes pendientes independientes para aceptación, rechazo y concurrencia.",
+      "steps": [
+        "Resolver cada solicitud y repetir las acciones.",
+        "Enviar dos aceptaciones concurrentes; consultar saldos, ledger y notificaciones."
+      ],
+      "expected": [
+        "Como máximo un pago; el estado final no se revierte y las notificaciones no se duplican."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/money-scenarios.integration.test.ts",
+        "pattern": "[CP-TX-15]"
+      }
+    },
+    {
+      "id": "CP-TX-16",
+      "title": "Autorizar lectura y resolución según actor",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-08-A1",
+        "RF-TX-08-A2",
+        "RF-TX-08-A3",
+        "RF-TX-10-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Solicitante, pagador y tercero sintéticos.",
+      "steps": [
+        "Consultar y resolver la misma operación con cada actor.",
+        "Repetir sin sesión."
+      ],
+      "expected": [
+        "Solo participantes leen y solo pagador resuelve; demás accesos no exponen datos."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-TX-16]"
+      }
+    },
+    {
+      "id": "CP-TX-17",
+      "title": "Rollback Oracle entre escrituras relacionadas",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-01-A2",
+        "RF-TX-02-A4",
+        "RF-TX-04-A2",
+        "RF-LED-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Transacción Oracle aislada e inyección de error tras débito antes de contrapartida.",
+      "steps": [
+        "Guardar saldos y conteos iniciales.",
+        "Provocar un fallo entre escrituras y consultar tras rollback."
+      ],
+      "expected": [
+        "No persisten débitos, asientos, operaciones, claves ni notificaciones parciales."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/flows.integration.test.ts",
+        "pattern": "[CP-TX-17]"
+      }
+    },
+    {
+      "id": "CP-GAS-04",
+      "title": "Crear división válida de USD 30 entre dos participantes",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-GAS-01-A1",
+        "RF-GAS-01-A3",
+        "RF-GAS-01-A2",
+        "RF-GAS-01-A4",
+        "RF-GAS-01-A5"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Total 30.00, dos participantes válidos distintos del organizador.",
+      "steps": [
+        "Revisar reparto y confirmar.",
+        "Consultar división, dos solicitudes pendientes y saldos."
+      ],
+      "expected": [
+        "Dos solicitudes de 15.00, suma 30.00; saldos sin cambio."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-GAS-04]"
+      }
+    },
+    {
+      "id": "CP-GAS-05",
+      "title": "Rechazar división con participante duplicado",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-GAS-01-A1",
+        "RF-GAS-01-A3"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Total 30.00 y mismo participante dos veces.",
+      "steps": [
+        "Enviar la división duplicada.",
+        "Consultar conteos antes y después."
+      ],
+      "expected": [
+        "Se rechaza sin división ni solicitudes parciales."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-GAS-05]"
+      }
+    },
+    {
+      "id": "CP-RNF-01",
+      "title": "Evaluar Adecuación funcional y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-FUN-01-A1",
+        "RNF-FUN-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto matriz-funcional-v1; muestra mínima 1; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Calcular sobre todos los AC funcionales: requiere pruebas ejecutadas y ausencia de brechas funcionales; omitidas cuentan pendientes.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral >= 100 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-02",
+      "title": "Evaluar Eficiencia de desempeño y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-PER-01-A1",
+        "RNF-PER-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto oracle-local-20-concurrentes-v1; muestra mínima 100; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Medir al menos 100 consultas con 20 clientes concurrentes tras calentamiento, Oracle local y dataset de 1000 operaciones; informar hardware y distribución.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral <= 500 ms.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-03",
+      "title": "Evaluar Compatibilidad y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-COM-01-A1",
+        "RNF-COM-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto edge-chrome-escritorio-v1; muestra mínima 2; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Ejecutar los mismos recorridos en Edge/Windows y Chrome/Linux; adjuntar resultados por navegador. Una sola plataforma no representa ambas.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral >= 100 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-04",
+      "title": "Evaluar Capacidad de interacción y rechazar evidencia inválida",
+      "level": "user",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-INT-01-A1",
+        "RNF-INT-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto teclado-escritorio-usuarios-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Usuarios finales completan pago, solicitud y división con teclado; registrar intentos, aciertos y barreras sin datos personales.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral >= 90 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-05",
+      "title": "Evaluar Fiabilidad y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-REL-01-A1",
+        "RNF-REL-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto oracle-fallos-concurrencia-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Ejecutar fallos entre escrituras y solicitudes concurrentes en Oracle real, comparando saldos, ledger, notificaciones y claves antes/después.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral >= 100 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-06",
+      "title": "Evaluar Seguridad y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-SEC-01-A1",
+        "RNF-SEC-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto api-tres-actores-v1; muestra mínima 12; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Probar visitante, propietario y tercero sobre lectura/mutación de pagos, solicitudes, bancos y notificaciones; contar incidentes reproducibles.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral == 0 incidentes.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-07",
+      "title": "Evaluar Mantenibilidad y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-MAN-01-A1",
+        "RNF-MAN-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto catalogo-ci-v1; muestra mínima 1; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Ejecutar validación de IDs/referencias/criterios/CP, detección de archivos ausentes y comparación exacta de vistas generadas en toda PR.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral == 100 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-08",
+      "title": "Evaluar Flexibilidad y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-FLE-01-A1",
+        "RNF-FLE-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto windows-linux-contenedor-v1; muestra mínima 2; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Preparar instalación desde lockfile y migraciones en Windows nativo y contenedor Linux; comprobar arranque, salud Oracle y build.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral >= 100 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-09",
+      "title": "Evaluar Seguridad operacional y rechazar evidencia inválida",
+      "level": "inspection",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-SAF-01-A1",
+        "RNF-SAF-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto advertencias-sandbox-v1; muestra mínima 7; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar avisos visibles y respuestas API con evidencia de UI y revisión de agente identificada.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral == 100 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-10",
+      "title": "Evaluar Calidad en uso: logro de tareas y rechazar evidencia inválida",
+      "level": "user",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-USO-01-A1",
+        "RNF-USO-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto usuarios-primer-uso-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos ficticios; informar tareas, aciertos y tiempo, sin usar agentes como participantes.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral >= 90 %.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-RNF-11",
+      "title": "Evaluar Calidad en uso: valoración del usuario y rechazar evidencia inválida",
+      "level": "user",
+      "polarity": "mixed",
+      "criteria": [
+        "RNF-SAT-01-A1",
+        "RNF-SAT-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+      ],
+      "data": "Contexto usuarios-primer-uso-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
+      "steps": [
+        "Recoger una respuesta de 1 a 5 por participante tras las mismas tareas; conservar comentarios anónimos y tamaño de muestra. Métrica local, no escala normativa ISO.",
+        "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
+      ],
+      "expected": [
+        "El resultado distingue aprobado, fallido, pendiente, insuficiente y obsoleto; umbral >= 4 puntos/5.",
+        "La revisión de agente no se contabiliza como evaluación de usuarios finales."
+      ],
+      "automation": null
+    },
+    {
+      "id": "CP-IDEM-01",
+      "title": "conserva la intención al cambiar el orden de claves",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-06-A2"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Repetir la misma clave con el mismo payload devuelve el resultado original sin nuevo asiento en el ledger."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/idempotency.test.ts",
+        "pattern": "[CP-IDEM-01]"
+      }
+    },
+    {
+      "id": "CP-IDEM-02",
+      "title": "distingue importes, destinatarios, monedas y orden de participantes",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-06-A3"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Repetir la misma clave con payload distinto se rechaza sin ejecutar la nueva operación."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/idempotency.test.ts",
+        "pattern": "[CP-IDEM-02]"
+      }
+    },
+    {
+      "id": "CP-IDEM-03",
+      "title": "rechaza claves inválidas y payloads no serializables",
+      "level": "unit",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-06-A1"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Las operaciones financieras aceptan una clave idempotente persistida y la asocian a su efecto."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/idempotency.test.ts",
+        "pattern": "[CP-IDEM-03]"
+      }
+    },
+    {
+      "id": "CP-LED-01",
+      "title": "exige doble partida balanceada por moneda",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-LED-01-A1"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Cada asiento contiene al menos dos partidas no nulas y su suma es cero por moneda; FX utiliza contrapartidas explícitas por divisa."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/ledger.test.ts",
+        "pattern": "[CP-LED-01]"
+      }
+    },
+    {
+      "id": "CP-LED-02",
+      "title": "identifica contrapartidas y conserva el hash al reordenar partidas",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-LED-01-A3"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Repetir una operación con las mismas partidas devuelve el mismo asiento sin nuevos efectos; partidas distintas para la misma operación producen conflicto."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/ledger.test.ts",
+        "pattern": "[CP-LED-02]"
+      }
+    },
+    {
+      "id": "CP-LED-03",
+      "title": "mantiene FX balanceado con cuentas puente separadas por moneda",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-LED-01-A1"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Cada asiento contiene al menos dos partidas no nulas y su suma es cero por moneda; FX utiliza contrapartidas explícitas por divisa."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/ledger.test.ts",
+        "pattern": "[CP-LED-03]"
+      }
+    },
+    {
+      "id": "CP-SQL-01",
+      "title": "separa SQL y triggers sin romper literales ni comentarios",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-LED-01-A2"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Oracle impide modificar o eliminar asientos contabilizados y añadirles partidas; un fallo revierte asiento, proyección y efectos locales."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/ledger.test.ts",
+        "pattern": "[CP-SQL-01]"
+      }
+    },
+    {
+      "id": "CP-CAL-01",
+      "title": "conserva el día ancla UTC al pasar por febrero y un año bisiesto",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-REC-01-A1"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "La recurrencia se crea con periodicidad weekly, monthly o quarterly y próxima fecha anclada en UTC."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/recurrence-policy.test.ts",
+        "pattern": "[CP-CAL-01]"
+      }
+    },
+    {
+      "id": "CP-CAL-02",
+      "title": "limita los reintentos y conserva la identidad de la ocurrencia",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-REC-01-A3"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "El worker de 30 segundos procesa vencimientos; con saldo insuficiente marca failed y aplica como máximo tres reintentos visibles a 1, 24 y 72 horas antes de avanzar."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/recurrence-policy.test.ts",
+        "pattern": "[CP-CAL-02]"
+      }
+    },
+    {
+      "id": "CP-CAL-03",
+      "title": "salta ciclos perdidos sin acumular cobros",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-REC-01-A6"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Los periodos perdidos por indisponibilidad se saltan sin acumular cobros y se conserva el día ancla UTC."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/recurrence-policy.test.ts",
+        "pattern": "[CP-CAL-03]"
+      }
+    },
+    {
+      "id": "CP-SPLIT-01",
+      "title": "reparte residuos sin perder centavos y conserva orden",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-GAS-01-A1",
+        "RF-GAS-01-A2",
+        "RF-TX-07-A3"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Se validan importe positivo, participantes únicos y distribución exacta en centavos.",
+        "El reparto igual distribuye el remanente de forma determinista y muestra el desglose antes de confirmar.",
+        "La suma de participaciones y movimientos iguala exactamente el total declarado."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/splits.test.ts",
+        "pattern": "[CP-SPLIT-01]"
+      }
+    },
+    {
+      "id": "CP-SPLIT-02",
+      "title": "incluye al organizador con cuota propia",
+      "level": "unit",
+      "polarity": "positive",
+      "criteria": [
+        "RF-GAS-01-A5"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "La inclusión del organizador es configurable y puede participar sin autogenerar una solicitud contra sí mismo."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/splits.test.ts",
+        "pattern": "[CP-SPLIT-02]"
+      }
+    },
+    {
+      "id": "CP-SPLIT-03",
+      "title": "valida cuotas personalizadas, duplicados y cuotas de cero",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-GAS-01-A1"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Se validan importe positivo, participantes únicos y distribución exacta en centavos."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/splits.test.ts",
+        "pattern": "[CP-SPLIT-03]"
+      }
+    },
+    {
+      "id": "CP-IDEM-04",
+      "title": "deduplica una intención y permite intenciones concurrentes distintas",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-01-A3",
+        "RF-TX-06-A1",
+        "RF-TX-06-A2",
+        "RF-TX-06-A3",
+        "RF-LED-01-A4"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "La clave idempotente se persiste; repetir la misma clave con el mismo payload no duplica el pago y con payload distinto se rechaza.",
+        "Las operaciones financieras aceptan una clave idempotente persistida y la asocian a su efecto.",
+        "Repetir la misma clave con el mismo payload devuelve el resultado original sin nuevo asiento en el ledger.",
+        "Repetir la misma clave con payload distinto se rechaza sin ejecutar la nueva operación.",
+        "El saldo disponible se autoriza desde las partidas contabilizadas; la proyección se reconcilia, no hay sobregiro concurrente y las intenciones distintas no utilizan un bloqueo global por usuario."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/flows.integration.test.ts",
+        "pattern": "[CP-IDEM-04]"
+      }
+    },
+    {
+      "id": "CP-LED-04",
+      "title": "impide mutar o ampliar asientos contabilizados y verifica replay",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-LED-01-A2",
+        "RF-LED-01-A3"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Oracle impide modificar o eliminar asientos contabilizados y añadirles partidas; un fallo revierte asiento, proyección y efectos locales.",
+        "Repetir una operación con las mismas partidas devuelve el mismo asiento sin nuevos efectos; partidas distintas para la misma operación producen conflicto."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/flows.integration.test.ts",
+        "pattern": "[CP-LED-04]"
+      }
+    },
+    {
+      "id": "CP-LED-05",
+      "title": "autoriza con el ledger y evita sobregiro concurrente",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-LED-01-A4"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "El saldo disponible se autoriza desde las partidas contabilizadas; la proyección se reconcilia, no hay sobregiro concurrente y las intenciones distintas no utilizan un bloqueo global por usuario."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/flows.integration.test.ts",
+        "pattern": "[CP-LED-05]"
+      }
+    },
+    {
+      "id": "CP-REC-04",
+      "title": "limita reintentos, exige consentimiento y mantiene cancelación terminal",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-REC-01-A2",
+        "RF-REC-01-A3",
+        "RF-REC-01-A5"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "El propietario puede pausar, reanudar, cambiar el importe y cancelar definitivamente; otro usuario no puede hacerlo. Una recurrencia cancelada no se reactiva.",
+        "El worker de 30 segundos procesa vencimientos; con saldo insuficiente marca failed y aplica como máximo tres reintentos visibles a 1, 24 y 72 horas antes de avanzar.",
+        "Crear o cambiar el importe exige consentimiento explícito; las instrucciones antiguas sin consentimiento quedan pausadas hasta nueva autorización."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/customer-flows.integration.test.ts",
+        "pattern": "[CP-REC-04]"
+      }
+    },
+    {
+      "id": "CP-WEB-01",
+      "title": "logs in and shows sandbox state without contacting a bank",
+      "level": "e2e",
+      "polarity": "positive",
+      "criteria": [
+        "RF-AUT-01-A1",
+        "RF-SBX-01-A3"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Las credenciales se validan en el servidor y la sesión queda asociada al usuario correcto.",
+        "La interfaz y la API identifican la operación como simulada y no inducen a error sobre dinero real."
+      ],
+      "automation": {
+        "runner": "cypress",
+        "path": "cypress/e2e/payments.cy.ts",
+        "pattern": "[CP-WEB-01]"
+      }
+    },
+    {
+      "id": "CP-WEB-02",
+      "title": "requests a sandbox quote before posting an international P2P payment",
+      "level": "e2e",
+      "polarity": "positive",
+      "criteria": [
+        "RF-FX-01-A1",
+        "RF-FX-01-A4"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "La cotización indica importes, par de monedas, tasa, fecha y vigencia.",
+        "La función se presenta como simulada y no afirma integración real de mercado."
+      ],
+      "automation": {
+        "runner": "cypress",
+        "path": "cypress/e2e/payments.cy.ts",
+        "pattern": "[CP-WEB-02]"
+      }
+    },
+    {
+      "id": "CP-WEB-03",
+      "title": "previsualiza la división y reintenta con la misma idempotencyKey",
+      "level": "e2e",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-GAS-01-A2",
+        "RF-GAS-01-A4"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "El reparto igual distribuye el remanente de forma determinista y muestra el desglose antes de confirmar.",
+        "El reintento no duplica solicitudes y se respetan las reglas de aceptación, rechazo y autorización."
+      ],
+      "automation": {
+        "runner": "cypress",
+        "path": "cypress/e2e/flows.cy.ts",
+        "pattern": "[CP-WEB-03]"
+      }
+    },
+    {
+      "id": "CP-WEB-04",
+      "title": "filtra, pagina y abre el detalle de una transacción",
+      "level": "e2e",
+      "polarity": "positive",
+      "criteria": [
+        "RF-TX-09-A2",
+        "RF-TX-09-A3"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "Se muestra importe, tipo, fecha, participantes y estado.",
+        "Cuando hay paginación, el orden es estable y no se repiten registros."
+      ],
+      "automation": {
+        "runner": "cypress",
+        "path": "cypress/e2e/flows.cy.ts",
+        "pattern": "[CP-WEB-04]"
+      }
+    },
+    {
+      "id": "CP-WEB-05",
+      "title": "muestra el error de alta de banco y la bandeja de notificaciones vacía",
+      "level": "e2e",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-CTA-01-A4",
+        "RF-NOT-01-A2"
+      ],
+      "preconditions": [
+        "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
+      ],
+      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "steps": [
+        "Ejecutar la suite enlazada mediante el comando de su nivel.",
+        "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
+      ],
+      "expected": [
+        "La funcionalidad se presenta como ficticia y no supone conectividad, pagos reales ni verificación externa.",
+        "Se presenta un estado vacío cuando no existen notificaciones."
+      ],
+      "automation": {
+        "runner": "cypress",
+        "path": "cypress/e2e/flows.cy.ts",
+        "pattern": "[CP-WEB-05]"
+      }
+    },
+    {
+      "id": "CP-MON-01",
+      "title": "Contrato completo de dinero exacto y límites de entrada",
+      "level": "unit",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-TX-07-A1",
+        "RF-TX-07-A2"
+      ],
+      "preconditions": [
+        "Ejecutar las fixtures monetarias sin conexión externa."
+      ],
+      "data": "0.01, 2500.00, 999999999999.99 y entradas inválidas; USD/COP/CRC.",
+      "steps": [
+        "Ejecutar la suite de dinero exacto."
+      ],
+      "expected": [
+        "Se conservan los centavos, se validan límites y las entradas inválidas se rechazan."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/money.test.ts",
+        "pattern": "fixed-precision sandbox money"
+      }
+    },
+    {
+      "id": "CP-LED-06",
+      "title": "Conservar movimientos y proyecciones del esquema anterior",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-LED-01-A1",
+        "RF-LED-01-A2",
+        "RF-LED-01-A4"
+      ],
+      "preconditions": [
+        "Oracle desechable con fixture anterior preparada antes de aplicar las migraciones 002 a 006."
+      ],
+      "data": "Cuenta sintética con USD 123.45, operación completada y dos partidas opuestas del esquema 001.",
+      "steps": [
+        "Preparar el esquema 001 y la fixture sintética con el comando protegido.",
+        "Aplicar las migraciones restantes y consultar asiento, partidas y proyección."
+      ],
+      "expected": [
+        "El asiento importado está contabilizado, conserva dos partidas que suman cero y la proyección sigue siendo USD 123.45."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/flows.integration.test.ts",
+        "pattern": "[CP-LED-06]"
+      }
+    },
+    {
+      "id": "CP-SEC-01",
+      "title": "Cabeceras defensivas y rechazo de acceso sin sesión",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-AUT-01-A2"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+      ],
+      "data": "Petición sin cookie de sesión y petición autenticada de control.",
+      "steps": [
+        "Solicitar un recurso de la API y revisar las cabeceras defensivas.",
+        "Intentar acceder a un recurso privado sin sesión."
+      ],
+      "expected": [
+        "Las respuestas incluyen las cabeceras defensivas configuradas.",
+        "El acceso sin sesión se rechaza sin devolver datos privados."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-SEC-01]"
+      }
+    },
+    {
+      "id": "CP-SEC-02",
+      "title": "Cookie de sesión HttpOnly y SameSite Lax con hash almacenado",
+      "level": "integration",
+      "polarity": "positive",
+      "criteria": [
+        "RF-AUT-01-A1"
+      ],
+      "preconditions": [
+        "Usuario sintético registrado y activo.",
+        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+      ],
+      "data": "Credenciales sintéticas válidas proporcionadas durante la ejecución; no registrar.",
+      "steps": [
+        "Iniciar sesión y revisar la cookie de sesión emitida.",
+        "Contrastar el identificador de sesión con el valor almacenado en el servidor."
+      ],
+      "expected": [
+        "La cookie es HttpOnly y SameSite=Lax.",
+        "El servidor almacena un hash de la sesión y no el identificador en claro."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-SEC-02]"
+      }
+    },
+    {
+      "id": "CP-SEC-03",
+      "title": "Revocación de sesión y errores de login genéricos",
+      "level": "integration",
+      "polarity": "mixed",
+      "criteria": [
+        "RF-AUT-01-A1",
+        "RF-AUT-01-A2",
+        "RF-AUT-01-A3"
+      ],
+      "preconditions": [
+        "Usuario sintético registrado y activo.",
+        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+      ],
+      "data": "Credenciales válidas e inválidas de usuarios existentes e inexistentes; cookies revocadas o vencidas.",
+      "steps": [
+        "Iniciar sesión, cerrar sesión y reutilizar la cookie anterior.",
+        "Probar una cookie inválida y una sesión vencida.",
+        "Comparar los mensajes de login fallido para usuario existente e inexistente."
+      ],
+      "expected": [
+        "La sesión revocada, inválida o vencida se rechaza sin acceder a datos privados.",
+        "Los errores de login son genéricos y no revelan si el usuario existe."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-SEC-03]"
+      }
+    },
+    {
+      "id": "CP-SEC-04",
+      "title": "Payloads de inyección en login, identificador y cursor",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-AUT-01-A3",
+        "RF-TX-10-A2"
+      ],
+      "preconditions": [
+        "Usuario sintético registrado.",
+        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+      ],
+      "data": "Cadenas sintéticas con comillas, operadores y comentarios SQL en login, identificador y cursor.",
+      "steps": [
+        "Enviar los payloads al login, a un identificador y a un cursor de paginación.",
+        "Comparar las respuestas con las de una petición de control."
+      ],
+      "expected": [
+        "No se omite la autenticación ni se amplía el acceso a datos ajenos.",
+        "Las entradas se rechazan o neutralizan sin ejecutar la inyección.",
+        "Las respuestas no incluyen errores SQL ni trazas internas."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-SEC-04]"
+      }
+    },
+    {
+      "id": "CP-SEC-05",
+      "title": "Límites de registro y campos de autoría ignorados en pago",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-AUT-02-A1",
+        "RF-AUT-02-A2",
+        "RF-TX-01-A4"
+      ],
+      "preconditions": [
+        "Pagador y destinatario sintéticos con saldo suficiente.",
+        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+      ],
+      "data": "Contraseña de más de 72 bytes y campos de registro sobrantes; pago con userId y ownerId ajenos.",
+      "steps": [
+        "Registrar con contraseña fuera de límite y con campos no admitidos.",
+        "Enviar un pago incluyendo identificadores de autoría distintos al de la sesión.",
+        "Consultar usuarios, operaciones y saldos."
+      ],
+      "expected": [
+        "El registro inválido se rechaza sin crear un usuario parcial.",
+        "El pago usa el actor de la sesión e ignora userId y ownerId enviados.",
+        "No se mueve dinero de terceros ni se crea una operación no autorizada."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-SEC-05]"
+      }
+    },
+    {
+      "id": "CP-SEC-06",
+      "title": "Importes inválidos, clave idempotente corta y autosolicitud sin efectos",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-TX-01-A1",
+        "RF-TX-07-A1"
+      ],
+      "preconditions": [
+        "Usuario sintético con saldo y otro usuario destinatario.",
+        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+      ],
+      "data": "Importes negativos, cero y con más decimales de los admitidos; clave idempotente demasiado corta; autosolicitud.",
+      "steps": [
+        "Guardar saldos y conteos iniciales.",
+        "Enviar los importes inválidos, la clave corta y la autosolicitud.",
+        "Consultar saldos, operaciones y solicitudes después de los intentos."
+      ],
+      "expected": [
+        "Todos los intentos se rechazan con validación.",
+        "No se crean operaciones ni solicitudes y los saldos no cambian."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-SEC-06]"
+      }
+    },
+    {
+      "id": "CP-SEC-07",
+      "title": "JSON malformado o sobredimensionado rechazado sin detalles internos",
+      "level": "integration",
+      "polarity": "negative",
+      "criteria": [
+        "RF-AUT-02-A1"
+      ],
+      "preconditions": [
+        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+      ],
+      "data": "Cuerpo JSON truncado y cuerpo sintético que excede el límite de tamaño.",
+      "steps": [
+        "Enviar un registro con JSON malformado.",
+        "Enviar un registro con un cuerpo sobredimensionado.",
+        "Revisar el estado y el contenido de ambas respuestas."
+      ],
+      "expected": [
+        "El JSON malformado responde 400 y el sobredimensionado responde 413.",
+        "Las respuestas son genéricas y no incluyen trazas, sentencias SQL ni rutas internas."
+      ],
+      "automation": {
+        "runner": "vitest",
+        "path": "web/src/lib/security.integration.test.ts",
+        "pattern": "[CP-SEC-07]"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "RF-PROD-01",
+      "title": "Autenticación y registro",
+      "requirements": [
+        "RF-AUT-01",
+        "RF-AUT-02"
+      ]
+    },
+    {
+      "id": "RF-PROD-02",
+      "title": "Saldo, historial y cuentas",
+      "requirements": [
+        "RF-TX-09",
+        "RF-TX-10",
+        "RF-CTA-01"
+      ]
+    },
+    {
+      "id": "RF-PROD-03",
+      "title": "Pago",
+      "requirements": [
+        "RF-TX-01",
+        "RF-TX-06"
+      ]
+    },
+    {
+      "id": "RF-PROD-04",
+      "title": "Divisas",
+      "requirements": [
+        "RF-FX-01"
+      ]
+    },
+    {
+      "id": "RF-PROD-05",
+      "title": "Solicitudes de pago",
+      "requirements": [
+        "RF-TX-02",
+        "RF-TX-03",
+        "RF-TX-04",
+        "RF-TX-05"
+      ]
+    },
+    {
+      "id": "RF-PROD-06",
+      "title": "División de gastos y contactos",
+      "requirements": [
+        "RF-GAS-01",
+        "RF-CON-01"
+      ]
+    },
+    {
+      "id": "RF-PROD-07",
+      "title": "Recurrencias",
+      "requirements": [
+        "RF-REC-01"
+      ]
+    },
+    {
+      "id": "RF-PROD-08",
+      "title": "Notificaciones",
+      "requirements": [
+        "RF-NOT-01"
+      ]
+    },
+    {
+      "id": "RF-PROD-09",
+      "title": "Oracle y dinero exacto",
+      "requirements": [
+        "RF-TX-07",
+        "RF-TX-08",
+        "RF-LED-01"
+      ]
+    },
+    {
+      "id": "RF-PROD-10",
+      "title": "Comercio y sandbox",
+      "requirements": [
+        "RF-COM-01",
+        "RF-SBX-01",
+        "RF-ING-01"
+      ]
+    }
+  ],
+  "legacyMappings": [
+    {
+      "id": "LM-CU-01",
+      "targets": [
+        "CU-AUT-02",
+        "RF-AUT-02"
+      ],
+      "reason": "El registro legacy se conserva como caso de uso de registro con validación de confirmación y unicidad."
+    },
+    {
+      "id": "LM-CU-02",
+      "targets": [
+        "CU-AUT-01",
+        "RF-AUT-01"
+      ],
+      "reason": "El login legacy se conserva como autenticación segura con sesión de servidor."
+    },
+    {
+      "id": "LM-CU-03",
+      "targets": [
+        "CU-CTA-01",
+        "RF-CTA-01"
+      ],
+      "reason": "La gestión bancaria legacy se reinterpreta como cuentas ficticias de sandbox, sin conectividad real."
+    },
+    {
+      "id": "LM-CU-04",
+      "targets": [
+        "CU-TX-01",
+        "RF-TX-01"
+      ],
+      "reason": "El pago legacy se conserva con dinero exacto, ledger y autorización."
+    },
+    {
+      "id": "LM-CU-05",
+      "targets": [
+        "CU-TX-02",
+        "RF-TX-02"
+      ],
+      "reason": "La solicitud legacy se conserva como solicitud pendiente sin movimiento de saldo."
+    },
+    {
+      "id": "LM-CU-06",
+      "targets": [
+        "CU-TX-04",
+        "CU-TX-05",
+        "RF-TX-04",
+        "RF-TX-05"
+      ],
+      "reason": "La resolución legacy se divide en aceptar y rechazar, con efectos financieros solo en la aceptación."
+    },
+    {
+      "id": "LM-CU-07",
+      "targets": [
+        "CU-TX-03",
+        "RF-TX-03",
+        "RF-TX-09",
+        "RF-TX-10"
+      ],
+      "reason": "El historial legacy se conserva junto con consulta de estado y detalle, con filtrado por participación."
+    },
+    {
+      "id": "LM-CU-08",
+      "targets": [],
+      "reason": "Retiro explícito: la red social legacy no forma parte del alcance. Solo se conserva búsqueda y gestión de contactos en RF-CON-01, sin grafo social ni muro."
+    }
+  ],
+  "quality": [
+    {
+      "requirementId": "RNF-FUN-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Adecuación funcional",
+      "metric": "Porcentaje de criterios funcionales verificados",
+      "threshold": ">= 100 %; n >= 1",
+      "method": "Calcular sobre todos los AC funcionales: requiere pruebas ejecutadas y ausencia de brechas funcionales; omitidas cuentan pendientes.",
+      "context": "matriz-funcional-v1",
+      "contextId": "matriz-funcional-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation"
+      ],
+      "aggregation": "min",
+      "operator": ">=",
+      "target": 100,
+      "minSamples": 1,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-PER-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Eficiencia de desempeño",
+      "metric": "Latencia p95 de consultas privadas",
+      "threshold": "<= 500 ms; n >= 100",
+      "method": "Medir al menos 100 consultas con 20 clientes concurrentes tras calentamiento, Oracle local y dataset de 1000 operaciones; informar hardware y distribución.",
+      "context": "oracle-local-20-concurrentes-v1",
+      "contextId": "oracle-local-20-concurrentes-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation"
+      ],
+      "aggregation": "max",
+      "operator": "<=",
+      "target": 500,
+      "minSamples": 100,
+      "unit": "ms"
+    },
+    {
+      "requirementId": "RNF-COM-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Compatibilidad",
+      "metric": "Recorridos críticos aprobados en navegadores objetivo",
+      "threshold": ">= 100 %; n >= 2",
+      "method": "Ejecutar los mismos recorridos en Edge/Windows y Chrome/Linux; adjuntar resultados por navegador. Una sola plataforma no representa ambas.",
+      "context": "edge-chrome-escritorio-v1",
+      "contextId": "edge-chrome-escritorio-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation"
+      ],
+      "aggregation": "min",
+      "operator": ">=",
+      "target": 100,
+      "minSamples": 2,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-INT-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Capacidad de interacción",
+      "metric": "Tareas completadas con teclado sin ayuda",
+      "threshold": ">= 90 %; n >= 10",
+      "method": "Usuarios finales completan pago, solicitud y división con teclado; registrar intentos, aciertos y barreras sin datos personales.",
+      "context": "teclado-escritorio-usuarios-v1",
+      "contextId": "teclado-escritorio-usuarios-v1",
+      "owner": "Equipo de evaluación y usuarios finales",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "user"
+      ],
+      "aggregation": "min",
+      "operator": ">=",
+      "target": 90,
+      "minSamples": 10,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-REL-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Fiabilidad",
+      "metric": "Ensayos de rollback e idempotencia sin efectos parciales",
+      "threshold": ">= 100 %; n >= 10",
+      "method": "Ejecutar fallos entre escrituras y solicitudes concurrentes en Oracle real, comparando saldos, ledger, notificaciones y claves antes/después.",
+      "context": "oracle-fallos-concurrencia-v1",
+      "contextId": "oracle-fallos-concurrencia-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation"
+      ],
+      "aggregation": "min",
+      "operator": ">=",
+      "target": 100,
+      "minSamples": 10,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-SEC-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Seguridad",
+      "metric": "Accesos indebidos que exponen datos o modifican estado",
+      "threshold": "== 0 incidentes; n >= 12",
+      "method": "Probar visitante, propietario y tercero sobre lectura/mutación de pagos, solicitudes, bancos y notificaciones; contar incidentes reproducibles.",
+      "context": "api-tres-actores-v1",
+      "contextId": "api-tres-actores-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation"
+      ],
+      "aggregation": "max",
+      "operator": "==",
+      "target": 0,
+      "minSamples": 12,
+      "unit": "incidentes"
+    },
+    {
+      "requirementId": "RNF-MAN-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Mantenibilidad",
+      "metric": "Integridad de referencias y documentos generados",
+      "threshold": "== 100 %; n >= 1",
+      "method": "Ejecutar validación de IDs/referencias/criterios/CP, detección de archivos ausentes y comparación exacta de vistas generadas en toda PR.",
+      "context": "catalogo-ci-v1",
+      "contextId": "catalogo-ci-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation"
+      ],
+      "aggregation": "min",
+      "operator": "==",
+      "target": 100,
+      "minSamples": 1,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-FLE-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Flexibilidad",
+      "metric": "Instalaciones reproducibles aprobadas en entornos objetivo",
+      "threshold": ">= 100 %; n >= 2",
+      "method": "Preparar instalación desde lockfile y migraciones en Windows nativo y contenedor Linux; comprobar arranque, salud Oracle y build.",
+      "context": "windows-linux-contenedor-v1",
+      "contextId": "windows-linux-contenedor-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation"
+      ],
+      "aggregation": "min",
+      "operator": ">=",
+      "target": 100,
+      "minSamples": 2,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-SAF-01",
+      "standard": "ISO/IEC 25010:2023",
+      "characteristic": "Seguridad operacional",
+      "metric": "Flujos financieros que identifican correctamente el sandbox",
+      "threshold": "== 100 %; n >= 7",
+      "method": "Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar avisos visibles y respuestas API con evidencia de UI y revisión de agente identificada.",
+      "context": "advertencias-sandbox-v1",
+      "contextId": "advertencias-sandbox-v1",
+      "owner": "Equipo de implementación y calidad",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "automation",
+        "agent"
+      ],
+      "aggregation": "min",
+      "operator": "==",
+      "target": 100,
+      "minSamples": 7,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-USO-01",
+      "standard": "ISO/IEC 25019:2023",
+      "characteristic": "Calidad en uso: logro de tareas",
+      "metric": "Tareas completadas correctamente sin asistencia",
+      "threshold": ">= 90 %; n >= 10",
+      "method": "Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos ficticios; informar tareas, aciertos y tiempo, sin usar agentes como participantes.",
+      "context": "usuarios-primer-uso-v1",
+      "contextId": "usuarios-primer-uso-v1",
+      "owner": "Equipo de evaluación y usuarios finales",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "user"
+      ],
+      "aggregation": "min",
+      "operator": ">=",
+      "target": 90,
+      "minSamples": 10,
+      "unit": "%"
+    },
+    {
+      "requirementId": "RNF-SAT-01",
+      "standard": "ISO/IEC 25019:2023",
+      "characteristic": "Calidad en uso: valoración del usuario",
+      "metric": "Valoración media tras completar tareas",
+      "threshold": ">= 4 puntos/5; n >= 10",
+      "method": "Recoger una respuesta de 1 a 5 por participante tras las mismas tareas; conservar comentarios anónimos y tamaño de muestra. Métrica local, no escala normativa ISO.",
+      "context": "usuarios-primer-uso-v1",
+      "contextId": "usuarios-primer-uso-v1",
+      "owner": "Equipo de evaluación y usuarios finales",
+      "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
+      "evaluatorKinds": [
+        "user"
+      ],
+      "aggregation": "mean",
+      "operator": ">=",
+      "target": 4,
+      "minSamples": 10,
+      "unit": "puntos/5"
+    }
+  ],
+  "businessRules": [
+    {
+      "id": "RN-TX-01",
+      "title": "Separación entre pago y solicitud",
+      "statement": "Un pago confirmado aplica efectos financieros. Crear una solicitud no mueve saldo; solo la aceptación autorizada puede generar el pago.",
+      "requirements": [
+        "RF-TX-01",
+        "RF-TX-02",
+        "RF-TX-04"
+      ]
+    },
+    {
+      "id": "RN-TX-02",
+      "title": "El rechazo no mueve dinero",
+      "statement": "Rechazar una solicitud pendiente cambia su estado sin débito, crédito ni partida contable.",
+      "requirements": [
+        "RF-TX-05"
+      ]
+    },
+    {
+      "id": "RN-TX-03",
+      "title": "Resolución única",
+      "statement": "Una solicitud solo pasa de pendiente a un estado final una vez; cualquier repetición no produce efectos financieros adicionales.",
+      "requirements": [
+        "RF-TX-04",
+        "RF-TX-05",
+        "RF-TX-06"
+      ]
+    },
+    {
+      "id": "RN-TX-04",
+      "title": "Correspondencia de actores",
+      "statement": "requester_id identifica al solicitante y payer_id al pagador autorizado para aceptar o rechazar. Al aceptar, el pagador paga al solicitante. senderId/receiverId son nombres del modelo histórico.",
+      "requirements": [
+        "RF-TX-03",
+        "RF-TX-04",
+        "RF-TX-08"
+      ]
+    },
+    {
+      "id": "RN-TX-05",
+      "title": "Atomicidad lógica",
+      "statement": "El comando confirmado persiste operación, asiento, proyección y notificación local de forma atómica; un fallo no deja efectos financieros parciales.",
+      "requirements": [
+        "RF-LED-01",
+        "RF-NOT-01"
+      ]
+    },
+    {
+      "id": "RN-TX-06",
+      "title": "Precisión monetaria",
+      "statement": "Entradas, cálculos y persistencia conservan unidades menores exactas; las tres monedas habilitadas utilizan dos decimales en este sandbox.",
+      "requirements": [
+        "RF-TX-07"
+      ]
+    },
+    {
+      "id": "RN-TX-07",
+      "title": "Autorización en servidor",
+      "statement": "El servidor comprueba identidad y permisos en cada acceso; ocultar controles en la interfaz no concede ni sustituye permisos.",
+      "requirements": [
+        "RF-TX-08"
+      ]
+    },
+    {
+      "id": "RN-TX-08",
+      "title": "Notificaciones sin duplicación",
+      "statement": "Una resolución válida genera el evento correspondiente; reintentos inválidos o resoluciones repetidas no duplican notificaciones.",
+      "requirements": [
+        "RF-NOT-01",
+        "RF-TX-06"
+      ]
+    },
+    {
+      "id": "RN-TX-09",
+      "title": "Evidencia reproducible",
+      "statement": "Toda conclusión de prueba identifica revisión, huella de fuentes, entorno, datos sintéticos, actor, pasos, resultado esperado y observado; no se registran secretos.",
+      "requirements": [
+        "RNF-MAN-01",
+        "RNF-REL-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-01",
+      "title": "Entorno financiero explícito",
+      "statement": "Pantallas, operaciones y comprobantes identifican fondos ficticios y nunca afirman movimiento de dinero real.",
+      "requirements": [
+        "RF-SBX-01",
+        "RF-ING-01",
+        "RF-COM-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-02",
+      "title": "Importe y moneda explícitos",
+      "statement": "La operación conserva importe y moneda de origen y destino, cuando corresponda, usando precisión exacta.",
+      "requirements": [
+        "RF-TX-07",
+        "RF-FX-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-03",
+      "title": "Cotización visible antes de confirmar",
+      "statement": "La conversión muestra importes, tasa de demostración, fuente y vencimiento antes de confirmar; no se inventan tarifas ni cotizaciones de mercado.",
+      "requirements": [
+        "RF-FX-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-04",
+      "title": "Confirmación del usuario",
+      "statement": "La salida requiere revisión y confirmación; cancelar antes de confirmar no crea un movimiento ni cambia saldos.",
+      "requirements": [
+        "RF-TX-01",
+        "RF-COM-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-05",
+      "title": "Consistencia de cada operación",
+      "statement": "La operación y sus efectos locales se contabilizan o revierten íntegramente; no hay débitos sin contrapartida.",
+      "requirements": [
+        "RF-LED-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-06",
+      "title": "Idempotencia",
+      "statement": "Repetir la misma intención con idénticos parámetros devuelve su resultado sin duplicar efectos; otros parámetros con la misma clave producen conflicto.",
+      "requirements": [
+        "RF-TX-06",
+        "RF-LED-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-07",
+      "title": "Pago entre personas",
+      "statement": "Un pago confirmado identifica pagador, destinatario, importe, moneda y estado; exige fondos sandbox suficientes. Los límites adicionales quedan sujetos a una decisión de producto.",
+      "requirements": [
+        "RF-TX-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-08",
+      "title": "Solicitudes de pago",
+      "statement": "Crear una solicitud no mueve saldo. Solo el pagador puede aceptar o rechazar mientras esté pendiente; la resolución financiera es única.",
+      "requirements": [
+        "RF-TX-02",
+        "RF-TX-04",
+        "RF-TX-05",
+        "RF-TX-06"
+      ]
+    },
+    {
+      "id": "RN-PROD-09",
+      "title": "División de gastos",
+      "statement": "La suma de cuotas coincide con el total; el residuo se asigna a primeros participantes, se revisa antes de confirmar y el organizador puede incluirse sin autosolicitud.",
+      "requirements": [
+        "RF-GAS-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-10",
+      "title": "Pagos recurrentes",
+      "statement": "La instrucción requiere consentimiento, calendario UTC anclado y estado consultable; cada ocurrencia tiene identidad propia. Aplica los tres reintentos locales acotados y cancelar impide futuros cobros.",
+      "requirements": [
+        "RF-REC-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-11",
+      "title": "Autorización y privacidad",
+      "statement": "Cada usuario accede solo a datos propios o expresamente compartidos como participante; las cuentas y notificaciones ajenas permanecen privadas.",
+      "requirements": [
+        "RF-TX-08",
+        "RF-TX-09",
+        "RF-TX-10",
+        "RF-NOT-01",
+        "RF-CTA-01"
+      ]
+    },
+    {
+      "id": "RN-PROD-12",
+      "title": "Historial auditable",
+      "statement": "Los movimientos financieros se reconstruyen con identificador, actor, fecha, importe, estado y contrapartidas inmutables. La retención de datos personales requiere una política separada.",
+      "requirements": [
+        "RF-LED-01",
+        "RF-TX-09",
+        "RF-TX-10"
+      ]
+    },
+    {
+      "id": "RN-PROD-13",
+      "title": "Pago sandbox a comercio extranjero",
+      "statement": "El usuario revisa comercio, importe, moneda y cotización aplicable; el resultado solo afecta al libro sandbox y no representa adquirencia ni liquidación real.",
+      "requirements": [
+        "RF-COM-01",
+        "RF-FX-01"
+      ]
+    }
+  ]
+}

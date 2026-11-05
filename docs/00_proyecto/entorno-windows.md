@@ -1,113 +1,57 @@
 # Entorno oficial: Windows nativo
 
-## Objetivo
-
-Definir una configuración reproducible para instalar, ejecutar y probar Superpay sin depender de WSL, Bash o un contenedor.
-
 ## Requisitos
 
-- Windows 10 u 11 de 64 bits.
-- PowerShell 5.1 o PowerShell 7+.
-- Git para Windows.
-- Node.js según `.node-version`.
-- Yarn Classic 1.22.22.
+- Windows 10/11 y PowerShell 5.1 o 7+.
+- Git, Docker Desktop con Compose, Node.js 22.20.0 (`.node-version`) y pnpm 10.12.1 (`packageManager`).
+- Oracle Database Free 23 para el servicio local; el driver activo es `node-oracledb` 7 Thin.
 
-## Instalación
+## Preparación
 
-```powershell
-git clone https://github.com/somefirenoodles/CYPRESSX.git
-cd CYPRESSX
-git checkout develop
-npm install -g yarn@1.22.22
-yarn install
-```
-
-## Ejecución local
+Desde la raíz del repositorio:
 
 ```powershell
-yarn dev
+Copy-Item .env.example .env
 ```
 
-Valores predeterminados:
-
-- Frontend: `http://localhost:3000`
-- API: `http://localhost:3001`
-
-## Preparación de datos
+Revisa los nombres de variables documentados en `.env.example` y define credenciales locales propias en `.env`; no publiques el archivo ni sus valores. Instala dependencias y arranca Oracle:
 
 ```powershell
-yarn db:seed:dev
+pnpm install --frozen-lockfile
+docker compose up -d oracle
 ```
 
-La base activa está en `data/database.json`. La semilla reproducible está en `data/database-seed.json`.
+Oracle publica su listener local en `127.0.0.1:1887` (servicio `FREEPDB1`). El servicio `app` de Compose se conecta internamente a `oracle:1521`; no cambies ese destino interno.
 
-## Pruebas
-
-Interfaz de Cypress:
+Cuando el contenedor esté saludable, crea el esquema y los datos sandbox de demo:
 
 ```powershell
-yarn cypress:open
+pnpm db:setup
 ```
 
-Ejecución headless:
+## Ejecución
 
 ```powershell
-yarn cypress:run
+pnpm dev
 ```
 
-Pruebas unitarias:
+El cliente Svelte se sirve en `http://localhost:3000`; la API Express en `http://localhost:3001`. El modo local requiere Oracle activo y la configuración `DB_USER`, `DB_PASSWORD` y `DB_CONNECT_STRING`; `PORT` puede ajustar el puerto API.
+
+## Pruebas y build
 
 ```powershell
-yarn test:unit:ci
+pnpm types
+pnpm test
+pnpm build
+pnpm test:e2e
 ```
 
-Validación de tipos:
+`pnpm test` ejecuta Vitest. La integración Oracle se omite si `DB_CONNECT_STRING` no está configurado y requiere esquema accesible. `pnpm test:e2e` inicia la UI y corre Cypress en navegador; revisar el spec para distinguir interceptores de API real. Las cotizaciones, fondos y comercios son exclusivamente sandbox.
 
-```powershell
-yarn types
-```
+Cypress E2E selecciona Edge en Windows (Chrome en Linux), sin Electron. La integración Oracle figura en CI con Oracle Free, pero en la última revisión local no se pudo ejecutar porque Docker daemon estaba apagado; iniciar Oracle localmente antes de usarla. Para validar el contenedor de producción: `docker compose up -d --build app`; Compose espera a que Oracle esté saludable y publica la web en `http://localhost:3000`.
 
-Build:
+## Estado y límites
 
-```powershell
-yarn build
-```
+La persistencia activa está en Oracle. Los archivos React, GraphQL, Amplify, Yarn y lowdb/JSON del producto anterior fueron retirados; no seguir instrucciones heredadas basadas en esas herramientas.
 
-## Incompatibilidades heredadas identificadas
-
-La línea base heredada contiene scripts escritos para shell Unix. En particular:
-
-- `list:dev:users` utiliza `cat` y pipes de shell.
-- `build:aws-exports-es5` utiliza `mv`.
-
-Estos comandos no forman parte del camino mínimo para ejecutar `yarn dev`, pero deben sustituirse por implementaciones multiplataforma antes de considerar completada la preparación técnica P0.
-
-Mientras se realiza esa sustitución, no deben usarse como evidencia de compatibilidad con Windows.
-
-## Criterios de salida de P0
-
-La preparación técnica se considera aprobada cuando, desde un clon limpio en Windows nativo, se pueda demostrar:
-
-1. instalación de dependencias sin intervención manual no documentada;
-2. `yarn types` exitoso;
-3. `yarn build` exitoso;
-4. `yarn dev` operativo en los puertos documentados;
-5. ejecución local de pruebas sin requerir Cypress Cloud o Percy;
-6. scripts necesarios compatibles con PowerShell/cmd;
-7. dependencias importadas declaradas directamente;
-8. ausencia de workflows operativos heredados que modifiquen repositorios externos;
-9. referencias operativas del repositorio apuntando a Superpay/CYPRESSX;
-10. licencia y atribución original preservadas.
-
-## Evidencia requerida
-
-Cada comprobación debe registrar como mínimo:
-
-- commit evaluado;
-- versión de Windows;
-- versión de Node;
-- versión de Yarn;
-- comando ejecutado;
-- código de salida;
-- fecha de ejecución;
-- archivo o captura de evidencia cuando corresponda.
+La automatización CI está en `.github/workflows/main.yml` y configura pnpm, Node, Oracle, migración/seed, tests y build. Esta guía no certifica que una ejecución local o CI haya pasado; registrar el resultado al ejecutar los comandos.

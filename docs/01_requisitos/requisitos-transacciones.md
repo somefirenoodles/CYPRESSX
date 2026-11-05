@@ -1,93 +1,123 @@
-# Requisitos funcionales — núcleo transaccional
+<!-- Generado por pnpm docs:generate desde catalogo.json. No editar manualmente. -->
+# Requisitos del núcleo transaccional
 
-## Alcance
+La línea base vigente se mantiene en [la ERS](ers.md), los [CU canónicos](casos-uso.md) y la [matriz única](matriz-trazabilidad.md). Editar `catalogo.json` y ejecutar `pnpm docs:generate`; esta vista no tiene un proceso independiente de aprobación o formato.
 
-Esta especificación cubre la primera capa documental de Superpay. Los requisitos se derivan del comportamiento observable, los modelos y la implementación actual del flujo de transacciones.
+## RF-TX-01 — Realizar pago entre usuarios
 
-## Requisitos
+El sistema debe permitir a un usuario autenticado transferir un importe exacto a otro usuario existente, con débito, crédito y registro en el ledger dentro de una sola transacción.
 
-### RF-TX-01. Crear un pago
+**Prioridad:** alta. **Implementación:** Presente en código. **CU:** CU-TX-01.
 
-El sistema debe permitir que un usuario autenticado cree un pago dirigido a otro usuario válido, indicando monto, descripción y nivel de privacidad aplicable.
+- **RF-TX-01-A1:** Se valida sesión, destinatario existente, importe positivo, saldo suficiente y moneda soportada antes de ejecutar.
+- **RF-TX-01-A2:** El débito al pagador y el crédito al destinatario son exactos, atómicos y quedan registrados en el ledger.
+- **RF-TX-01-A3:** La clave idempotente se persiste; repetir la misma clave con el mismo payload no duplica el pago y con payload distinto se rechaza.
+- **RF-TX-01-A4:** Un usuario no puede debitar cuentas ajenas ni pagar sin autorización de la cuenta origen.
+- **RF-TX-01-A5:** La respuesta y los errores no exponen saldos, identificadores ni movimientos de terceros.
+- **RF-TX-01-A6:** El pago confirmado genera una notificación persistida al destinatario en la misma transacción; reintentos no la duplican.
 
-Criterios verificables:
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
-- el receptor debe existir;
-- el monto debe ser válido;
-- la transacción debe registrarse una sola vez;
-- el pago completado debe modificar los saldos correspondientes;
-- el receptor debe recibir la notificación de pago definida por el sistema.
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-### RF-TX-02. Crear una solicitud de pago
+## RF-TX-02 — Crear solicitud de pago
 
-El sistema debe permitir que un usuario autenticado cree una solicitud de pago dirigida a otro usuario válido.
+El sistema debe permitir crear una solicitud de pago pendiente dirigida a un usuario existente, sin modificar saldos al crearla.
 
-Criterios verificables:
+**Prioridad:** alta. **Implementación:** Presente en código. **CU:** CU-TX-02.
 
-- la solicitud debe registrarse con estado pendiente;
-- crear la solicitud no debe transferir dinero;
-- el receptor debe recibir una notificación de solicitud;
-- el monto almacenado debe conservar exactamente el valor monetario representado por la entrada válida.
+- **RF-TX-02-A1:** Se validan sesión, destinatario existente, importe positivo y moneda soportada.
+- **RF-TX-02-A2:** La solicitud se crea en estado pendiente y no produce débito ni crédito.
+- **RF-TX-02-A3:** Una clave idempotente repetida con el mismo payload no crea solicitudes duplicadas.
+- **RF-TX-02-A4:** Los errores de validación no generan solicitudes ni notificaciones parciales.
+- **RF-TX-02-A5:** La creación genera una notificación persistida al pagador, sin modificar los saldos.
 
-### RF-TX-03. Consultar una solicitud pendiente
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
-El usuario receptor debe poder consultar una solicitud de pago dirigida a su cuenta y conocer como mínimo emisor, receptor, monto, descripción y estado.
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-### RF-TX-04. Aceptar una solicitud de pago
+## RF-TX-03 — Consultar solicitudes y estado
 
-El receptor de una solicitud pendiente debe poder aceptarla.
+El sistema debe permitir al usuario autorizado consultar sus solicitudes de pago y el estado actual de cada una.
 
-Criterios verificables:
+**Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-TX-03.
 
-- solo una solicitud pendiente puede aceptarse;
-- la aceptación debe aplicar los efectos financieros exactamente una vez;
-- la solicitud debe quedar en estado final compatible con aceptación/completado;
-- el solicitante debe recibir la notificación correspondiente.
+- **RF-TX-03-A1:** Solo el pagador, el destinatario o un participante autorizado puede consultar la solicitud.
+- **RF-TX-03-A2:** La consulta devuelve importe, tipo, fecha, participantes y estado.
+- **RF-TX-03-A3:** Un identificador inexistente o ajeno se rechaza sin revelar su existencia.
 
-### RF-TX-05. Rechazar una solicitud de pago
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
-El receptor de una solicitud pendiente debe poder rechazarla.
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-Criterios verificables:
+## RF-TX-04 — Aceptar solicitud de pago
 
-- rechazar no debe transferir dinero;
-- los saldos de emisor y receptor deben permanecer iguales a los valores previos al rechazo;
-- la solicitud debe quedar en un estado final de rechazo;
-- una solicitud rechazada no debe volver a producir efectos financieros.
+El destinatario de una solicitud pendiente debe poder aceptarla, ejecutando el pago exacto una sola vez.
 
-### RF-TX-06. Impedir resolución repetida
+**Prioridad:** alta. **Implementación:** Presente en código. **CU:** CU-TX-04.
 
-Una solicitud que ya alcanzó un estado final no debe poder resolverse nuevamente.
+- **RF-TX-04-A1:** Solo el destinatario puede aceptar una solicitud pendiente y debe tener saldo suficiente.
+- **RF-TX-04-A2:** La aceptación debita, acredita, registra el ledger y cambia el estado a aceptada de forma atómica.
+- **RF-TX-04-A3:** Repetir la aceptación no vuelve a debitar y devuelve un conflicto o el resultado idempotente.
+- **RF-TX-04-A4:** Aceptar genera una notificación persistida al solicitante de forma atómica con el pago y la resolución.
 
-Criterios verificables:
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
-- una segunda aceptación no debe repetir débitos o créditos;
-- un rechazo posterior a una aceptación no debe modificar saldos;
-- una aceptación posterior a un rechazo no debe modificar saldos;
-- las notificaciones asociadas a la resolución no deben duplicarse por reintentos inválidos.
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-### RF-TX-07. Mantener consistencia monetaria
+## RF-TX-05 — Rechazar solicitud de pago
 
-El sistema debe conservar la precisión monetaria definida por su modelo interno en creación, almacenamiento, cálculo y presentación de transacciones.
+El destinatario de una solicitud pendiente debe poder rechazarla sin que se mueva dinero.
 
-Criterios verificables:
+**Prioridad:** alta. **Implementación:** Presente en código. **CU:** CU-TX-05.
 
-- los montos decimales válidos no deben perder centavos;
-- débito y crédito deben utilizar la misma unidad monetaria;
-- el valor mostrado al usuario debe corresponder con el valor persistido.
+- **RF-TX-05-A1:** Solo el destinatario puede rechazar una solicitud pendiente.
+- **RF-TX-05-A2:** El rechazo cambia el estado a rechazada sin débito, crédito ni asiento financiero.
+- **RF-TX-05-A3:** Repetir el rechazo no produce efectos adicionales ni notificaciones duplicadas.
 
-### RF-TX-08. Restringir operaciones al actor autorizado
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
-Las operaciones de resolución de una solicitud deben estar disponibles únicamente para el usuario autorizado según la relación de la transacción.
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-Criterios verificables:
+## RF-TX-06 — No repetir operaciones financieras
 
-- un tercero no participante no debe poder resolver la solicitud;
-- el emisor no debe poder ejecutar acciones reservadas al receptor cuando el flujo así lo define;
-- la validación debe existir en la capa de servidor y no depender exclusivamente de la interfaz.
+El sistema debe impedir que reintentos de pagos, solicitudes, aceptaciones o rechazos produzcan efectos financieros duplicados.
 
-## Estado de esta iteración
+**Prioridad:** alta. **Implementación:** Presente en código. **CU:** CU-TX-01, CU-TX-02, CU-TX-04, CU-TX-05.
 
-Estos requisitos describen el comportamiento esperado para diseñar pruebas y mantenimiento. No significan que la implementación actual los cumpla.
+- **RF-TX-06-A1:** Las operaciones financieras aceptan una clave idempotente persistida y la asocian a su efecto.
+- **RF-TX-06-A2:** Repetir la misma clave con el mismo payload devuelve el resultado original sin nuevo asiento en el ledger.
+- **RF-TX-06-A3:** Repetir la misma clave con payload distinto se rechaza sin ejecutar la nueva operación.
+- **RF-TX-06-A4:** Una solicitud aceptada o rechazada nunca vuelve a producir efectos, aunque se use otra clave o se intente otra acción.
 
-Los incumplimientos ya conocidos se registran en `docs/03_mantenimiento/defectos-reservados.md` y se conservan deliberadamente hasta la fase de mantenimiento correspondiente.
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
+
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
+
+## RF-TX-07 — Dinero exacto
+
+El sistema debe representar y calcular importes en unidades menores exactas, sin pérdidas por punto flotante.
+
+**Prioridad:** alta. **Implementación:** Presente en código. **CU:** CU-TX-01, CU-GAS-01, CU-FX-01, CU-REC-01.
+
+- **RF-TX-07-A1:** Los importes se persisten como enteros en unidades menores con dos decimales para USD, COP y CRC.
+- **RF-TX-07-A2:** Los cálculos de saldo, débito, crédito y conversión no usan aritmética binaria de punto flotante.
+- **RF-TX-07-A3:** La suma de participaciones y movimientos iguala exactamente el total declarado.
+
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
+
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
+
+## RF-TX-08 — Autorización de operaciones
+
+El sistema debe autorizar en servidor cada operación privada o mutadora según el actor y el recurso.
+
+**Prioridad:** alta. **Implementación:** Presente en código. **CU:** CU-TX-01, CU-TX-02, CU-TX-03, CU-TX-04, CU-TX-05, CU-CTA-01, CU-CON-01, CU-GAS-01, CU-NOT-01, CU-REC-01, CU-COM-01, CU-ING-01.
+
+- **RF-TX-08-A1:** Todo endpoint privado o mutador exige sesión y verifica la titularidad o participación del actor.
+- **RF-TX-08-A2:** Las respuestas 401 y 403 son genéricas y no revelan la existencia de recursos ajenos.
+- **RF-TX-08-A3:** Ocultar una opción en la interfaz no sustituye la autorización del servidor.
+
+**Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
+
+**Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.

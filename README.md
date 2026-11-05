@@ -1,78 +1,51 @@
-# AASP
+# Superpay
 
-Aplicación académica de pagos utilizada como objeto de estudio para prácticas de **pruebas de software, mantenimiento y aseguramiento de la calidad**.
+Aplicación académica web para prácticas de pruebas, mantenimiento y aseguramiento de calidad. El producto es una aplicación completa de operaciones **sandbox**: todas las operaciones, saldos, cotizaciones y comercios son de demostración; no se envía ni recibe dinero real ni se usan cotizaciones de mercado. El repositorio conserva la licencia MIT y atribución de Cypress Real World App en [`LICENSE`](./LICENSE).
 
-AASP parte del código abierto de Cypress Real World App y conserva la licencia y atribución correspondientes. Cypress continúa utilizándose como herramienta de pruebas; **RWA ya no constituye la identidad del proyecto académico**.
+## Stack activo
 
-## Entorno oficial
+- Svelte 5 + TypeScript + Vite 8 (`web/`), en `http://localhost:3000`.
+- API modular Express + TypeScript (`backend/`), en `http://localhost:3001`.
+- Oracle Database Free 23 local y `node-oracledb` 7 Thin; ledger y balances en unidades menores enteras.
+- Sesiones opacas persistidas en Oracle; cotizaciones FX con tasas fijas de fixture de demostración.
+- Vitest para unitarias/integración Oracle y Cypress para E2E web.
+- Dockerfile multi-stage y servicio Compose `app`: en producción Express sirve el build Svelte; `tsx` se conserva como dependencia de runtime. Cypress E2E usa Edge en Windows o Chrome en Linux, sin Electron.
+- Node.js 22.20.0 y pnpm 10.12.1. La SPA React, lowdb, GraphQL, Amplify y proveedores de autenticación antiguos fueron retirados del árbol de trabajo.
 
-- Windows nativo.
-- PowerShell.
-- Node.js 22.20.x.
-- Yarn Classic 1.22.22.
-- Frontend: `http://localhost:3000`.
-- Backend: `http://localhost:3001`.
+## Inicio local (Windows / PowerShell)
 
-## Instalación
-
-```powershell
-git clone https://github.com/somefirenoodles/CYPRESSX.git
-cd CYPRESSX
-yarn install --frozen-lockfile
-yarn dev
-```
-
-Para consultar los usuarios de desarrollo:
+1. Instala Node.js 22.20.0, pnpm 10.12.1 y Docker Desktop.
+2. Crea `.env` a partir de `.env.example` y define credenciales locales propias. No uses valores productivos.
+3. Ejecuta:
 
 ```powershell
-yarn list:dev:users
+pnpm install --frozen-lockfile
+docker compose up -d oracle
+pnpm db:setup
+pnpm dev
 ```
 
-La contraseña predeterminada de los usuarios de prueba es `s3cret`.
+La UI inicia en `http://localhost:3000`; la API en `http://localhost:3001`. Registra una cuenta de prueba desde la pantalla. El alta crea fondos ficticios iniciales en sandbox.
+
+Para ejecutar la imagen de producción local con Compose (app en `http://localhost:3000`, Oracle como dependencia):
+
+```powershell
+docker compose up -d --build app
+```
 
 ## Verificación
 
 ```powershell
-yarn types
-yarn test:unit:ci
-yarn build
+pnpm types
+pnpm test
+pnpm build
+pnpm test:e2e
 ```
 
-Para abrir Cypress:
+La integración Oracle se omite si no está configurada. `pnpm test:oracle:isolated` crea un Oracle desechable y ejecuta migraciones, pruebas y conciliación sin reutilizar la base de trabajo. `pnpm docs:check` valida ERS/CU/RNF/trazabilidad y `pnpm ledger:check` concilia el entorno configurado. Los cinco escenarios Cypress usan respuestas API interceptadas; la integración de persistencia se prueba por separado.
 
-```powershell
-yarn cypress:open
-```
+## Documentación del proyecto
 
-## Documentación académica
+La [ERS](docs/01_requisitos/ers.md), los [CU](docs/01_requisitos/casos-uso.md) y la [matriz única](docs/01_requisitos/matriz-trazabilidad.md) se generan desde un catálogo. Consulta la decisión del [ledger interno autoritativo](docs/04_arquitectura/ledger-interno.md).
 
-La documentación versionada se encuentra en `docs/`.
-
-Primera capa disponible:
-
-- `docs/00_proyecto/README.md`: alcance y línea base.
-- `docs/00_proyecto/entorno-windows.md`: procedimiento reproducible en Windows.
-- `docs/01_requisitos/requisitos-transacciones.md`: requisitos del núcleo transaccional.
-- `docs/01_requisitos/reglas-negocio-transacciones.md`: reglas de pagos y solicitudes.
-- `docs/01_requisitos/casos-uso-transacciones.md`: casos de uso iniciales.
-- `docs/03_mantenimiento/defectos-reservados.md`: defectos seleccionados para pruebas y mantenimiento.
-
-## Alcance funcional inicial
-
-La primera línea base documental cubre:
-
-1. Envío de pagos.
-2. Solicitudes de pago.
-3. Resolución de solicitudes.
-4. Actualización de saldos.
-5. Notificaciones asociadas.
-
-Los demás módulos se incorporarán por capas documentales posteriores.
-
-## Defectos reservados
-
-Algunos comportamientos incorrectos se mantienen deliberadamente para permitir ejercicios de reproducción, diseño de pruebas y mantenimiento correctivo. No deben corregirse sin una tarea explícita y evidencia reproducible. Consulte `docs/03_mantenimiento/defectos-reservados.md`.
-
-## Atribución
-
-AASP deriva de [Cypress Real World App](https://github.com/cypress-io/cypress-realworld-app), distribuido bajo licencia MIT. El archivo `LICENSE` conserva la información de licencia aplicable.
+La guía reproducible está en [`docs/00_proyecto/entorno-windows.md`](./docs/00_proyecto/entorno-windows.md). La arquitectura, requisitos, invariantes, brechas y estrategia de prueba se navegan desde [`docs/00_proyecto/README.md`](./docs/00_proyecto/README.md).

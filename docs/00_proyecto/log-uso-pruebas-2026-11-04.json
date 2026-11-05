@@ -1,0 +1,109 @@
+{
+  "id": "INF-USO-PRUEBAS-01",
+  "scope": "Etapa de pruebas del 2026-11-04; suplemento separado del log de implementación anterior.",
+  "opencode": {
+    "model": "opencode/deepseek-v4.1-flash-free",
+    "calls": [
+      {
+        "id": "ses_e57a03263ffeqbl5ZcZb16h8WZ",
+        "title": "Puerto efímero en run-e2e.mjs",
+        "time_created": 1793826213434,
+        "time_updated": 1793826231886,
+        "tokens_input": 5796,
+        "tokens_output": 1260,
+        "tokens_reasoning": 773,
+        "tokens_cache_read": 34176,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "task_id": "e2e-port-06",
+        "reported_result": "complete",
+        "final_validation": "Aprobada: cinco Cypress con el puerto 3000 ocupado por un servidor propio que responde 418."
+      },
+      {
+        "id": "ses_e57a4e53fffecT5zDYpFsG87DX",
+        "title": "Informe de verificación 2026-11-04",
+        "time_created": 1793825905449,
+        "time_updated": 1793825944230,
+        "tokens_input": 9757,
+        "tokens_output": 2649,
+        "tokens_reasoning": 718,
+        "tokens_cache_read": 20736,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "task_id": "verification-report-05",
+        "reported_result": "complete",
+        "final_validation": "Revisada e integrada; regresiones ejecutadas por el orquestador.",
+        "created_at": "2026-11-04T20:58:25.449000+00:00"
+      },
+      {
+        "id": "ses_e57ae4ef8ffeAsfPLRJhm5FXo1",
+        "title": "Tests de CP-FX-02 y CP-TX-15",
+        "time_created": 1793825288462,
+        "time_updated": 1793825460233,
+        "tokens_input": 33271,
+        "tokens_output": 5910,
+        "tokens_reasoning": 8740,
+        "tokens_cache_read": 557696,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "task_id": "money-scenarios-04",
+        "reported_result": "complete",
+        "final_validation": "Revisada e integrada; regresiones ejecutadas por el orquestador.",
+        "created_at": "2026-11-04T20:48:08.462000+00:00"
+      },
+      {
+        "id": "ses_e57b274cbffes6no9k6hhe2tje",
+        "title": "Añadir siete CP-SEC en catalogo.json",
+        "time_created": 1793825016633,
+        "time_updated": 1793825075098,
+        "tokens_input": 25749,
+        "tokens_output": 4884,
+        "tokens_reasoning": 2493,
+        "tokens_cache_read": 169216,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "task_id": "security-catalog-03",
+        "reported_result": "complete",
+        "final_validation": "Revisada e integrada; regresiones ejecutadas por el orquestador.",
+        "created_at": "2026-11-04T20:43:36.633000+00:00"
+      },
+      {
+        "id": "ses_e57b8144bffe8KkpqUFC20tyFj",
+        "title": "Regresiones Oracle en security.integration.test.ts",
+        "time_created": 1793824648240,
+        "time_updated": 1793824758891,
+        "tokens_input": 69548,
+        "tokens_output": 7372,
+        "tokens_reasoning": 10177,
+        "tokens_cache_read": 790016,
+        "tokens_cache_write": 0,
+        "cost": 0.0,
+        "task_id": "security-regressions-02",
+        "reported_result": "partial",
+        "final_validation": "Revisada e integrada; regresiones ejecutadas por el orquestador.",
+        "created_at": "2026-11-04T20:37:28.240000+00:00"
+      }
+    ],
+    "totals": {
+      "tokens_input": 144121,
+      "tokens_output": 22075,
+      "tokens_reasoning": 22901,
+      "tokens_cache_read": 1571840,
+      "tokens_cache_write": 0,
+      "cost": 0
+    }
+  },
+  "qwen": {
+    "calls": 1,
+    "model": "huihui_ai/qwen3-abliterated:8b",
+    "prompt_eval_count": 428,
+    "eval_count": 44,
+    "elapsed_ms": 37638,
+    "task": "Revisión aritmética de conteos; propuesta unverified, recalculada por el orquestador."
+  },
+  "codex": {
+    "usage": "No medido en este suplemento; no se atribuye cuota global al chat.",
+    "new_subagents": 0
+  },
+  "note": "Contadores locales de OpenCode consultados en session_v2. Coste registrado 0 no prueba consumo cero de cuota Codex. Razonamiento y caché se conservan separados, sin convertirlos a facturación. El trabajador no ejecuta shell; Codex ejecutó y verificó las pruebas."
+}

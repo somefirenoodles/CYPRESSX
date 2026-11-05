@@ -1,124 +1,59 @@
+import "dotenv/config";
+import { join } from "node:path";
 import express from "express";
-import { join } from "path";
-import logger from "morgan";
-import passport from "passport";
-import session from "express-session";
-import bodyParser from "body-parser";
-import cors from "cors";
-import paginate from "express-paginate";
-import { createHandler as graphqlHandler } from "graphql-http/lib/use/express";
-import { loadSchemaSync } from "@graphql-tools/load";
-import { GraphQLFileLoader } from "@graphql-tools/graphql-file-loader";
-import { addResolversToSchema } from "@graphql-tools/schema";
+import helmet from "helmet";
+import { sessionMiddleware } from "./http/auth";
+import routes from "./http/routes";
+import customerRoutes from "./http/customer-routes";
+import moneyWorkflowRoutes from "./http/money-workflow-routes";
+import recurrenceRoutes from "./http/recurrence-routes";
+import { withConnection } from "./db/oracle";
 
-import auth from "./auth";
-import userRoutes from "./user-routes";
-import contactRoutes from "./contact-routes";
-import bankAccountRoutes from "./bankaccount-routes";
-import gqlPlaygroundRoutes from "./gql-playground-routes";
-import transactionRoutes from "./transaction-routes";
-import likeRoutes from "./like-routes";
-import commentRoutes from "./comment-routes";
-import notificationRoutes from "./notification-routes";
-import bankTransferRoutes from "./banktransfer-routes";
-import testDataRoutes from "./testdata-routes";
-import { checkAuth0Jwt, verifyOktaToken, checkCognitoJwt, checkGoogleJwt } from "./helpers";
-import resolvers from "./graphql/resolvers";
-import { frontendPort, getBackendPort } from "../src/utils/portUtils";
+export function createApp() {
+  const app = express();
+  app.disable("x-powered-by");
+  app.use(helmet());
+  app.use(express.json({ limit: "32kb" }));
+  app.use(sessionMiddleware);
 
-require("dotenv").config();
+  app.get("/api/health", async (_request, response) => {
+    try {
+      await withConnection((connection) => connection.execute("SELECT 1 FROM dual"));
+      response.json({ status: "ok", database: "oracle", mode: "sandbox" });
+    } catch (error) {
+      console.error("Oracle health check failed", error);
+      response.status(503).json({ status: "unavailable", database: "oracle" });
+    }
+  });
 
-const corsOption = {
-  origin: `http://localhost:${frontendPort}`,
-  credentials: true,
-};
+  app.use("/api", customerRoutes);
+  app.use("/api", moneyWorkflowRoutes);
+  app.use("/api", recurrenceRoutes);
+  app.use("/api", routes);
+  app.use("/api", (_request, response) => response.status(404).json({ message: "Ruta API no encontrada." }));
 
-const schema = loadSchemaSync(join(__dirname, "./graphql/schema.graphql"), {
-  loaders: [new GraphQLFileLoader()],
-});
+  if (process.env.NODE_ENV === "production") {
+    const buildPath = join(process.cwd(), "build");
+    app.use(express.static(buildPath, { index: false, maxAge: "1h" }));
+    app.get("*", (_request, response) => response.sendFile(join(buildPath, "index.html")));
+  }
 
-const schemaWithResolvers = addResolversToSchema({
-  schema,
-  resolvers,
-});
+  app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+    const parserType = error && typeof error === 'object' && 'type' in error ? error.type : undefined;
+    if (parserType === 'entity.parse.failed') {
+      response.status(400).json({ message: 'El cuerpo JSON no es válido.' });
+      return;
+    }
+    if (parserType === 'entity.too.large') {
+      response.status(413).json({ message: 'El cuerpo de la solicitud supera el límite permitido.' });
+      return;
+    }
+    console.error("Unhandled API error", error);
+    response.status(500).json({ message: "Error interno del servicio." });
+  });
 
-const app = express();
-
-/* istanbul ignore next */
-// @ts-expect-error
-if (global.__coverage__) {
-  require("@cypress/code-coverage/middleware/express")(app);
+  return app;
 }
 
-app.use(cors(corsOption));
-app.use(logger("dev"));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-app.use(
-  session({
-    secret: "session secret",
-    resave: false,
-    saveUninitialized: false,
-    unset: "destroy",
-  })
-);
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.use(paginate.middleware(+process.env.PAGINATION_PAGE_SIZE!));
-
-/* istanbul ignore next */
-if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") {
-  app.use("/testData", testDataRoutes);
-}
-
-app.use(auth);
-
-/* istanbul ignore if */
-if (process.env.VITE_AUTH0) {
-  app.use(checkAuth0Jwt);
-}
-
-/* istanbul ignore if */
-if (process.env.VITE_OKTA) {
-  app.use(verifyOktaToken);
-}
-
-/* istanbul ignore if */
-if (process.env.VITE_AWS_COGNITO) {
-  app.use(checkCognitoJwt);
-}
-
-/* istanbul ignore if */
-if (process.env.VITE_GOOGLE) {
-  app.use(checkGoogleJwt);
-}
-
-app.get("/", (_req, res) => {
-  res.send("Superpay - backend académico");
-});
-app.use("/graphql", gqlPlaygroundRoutes);
-app.use(
-  "/graphql",
-  graphqlHandler({
-    schema: schemaWithResolvers,
-    context: async (req, _args) => {
-      return { user: req.raw.user };
-    },
-  })
-);
-app.use("/users", userRoutes);
-app.use("/contacts", contactRoutes);
-app.use("/bankAccounts", bankAccountRoutes);
-app.use("/transactions", transactionRoutes);
-app.use("/likes", likeRoutes);
-app.use("/comments", commentRoutes);
-app.use("/notifications", notificationRoutes);
-app.use("/bankTransfers", bankTransferRoutes);
-
-app.use(express.static(join(__dirname, "../public")));
-
-getBackendPort().then((port) => {
-  app.listen(port);
-});
+export const app = createApp();
+export default app;
