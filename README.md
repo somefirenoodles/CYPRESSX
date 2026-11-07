@@ -1,6 +1,8 @@
 # Superpay
 
-Aplicación académica web para prácticas de pruebas, mantenimiento y aseguramiento de calidad. El producto es una aplicación completa de operaciones **sandbox**: todas las operaciones, saldos, cotizaciones y comercios son de demostración; no se envía ni recibe dinero real ni se usan cotizaciones de mercado. El repositorio conserva la licencia MIT y atribución de Cypress Real World App en [`LICENSE`](./LICENSE).
+Todo lo que quieras pagar.
+
+El repositorio conserva la licencia MIT y atribución de Cypress Real World App en [`LICENSE`](./LICENSE).
 
 ## Stack activo
 
