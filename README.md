@@ -1,5 +1,7 @@
 # Superpay
 
+Todo lo que quieras pagar.
+
 Superpay ofrece una aplicación web de pagos con transferencias entre usuarios, solicitudes, división de gastos, pagos recurrentes, pagos a comercios e historial. Este repositorio contiene el producto web, su API, persistencia relacional y la estrategia de mantenimiento y calidad. La atribución y licencia MIT de Cypress Real World App se conserva en [`LICENSE`](./LICENSE).
 
 ## Stack vigente
