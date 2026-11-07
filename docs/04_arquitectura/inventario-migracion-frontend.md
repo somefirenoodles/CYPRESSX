@@ -1,34 +1,32 @@
-# Inventario del frontend activo y limpieza del árbol heredado
+# Inventario del frontend activo
 
-**Estado:** la migración del camino activo a Svelte está implementada y las fuentes obsoletas React/lowdb/GraphQL se eliminaron. Este inventario no certifica paridad completa con requisitos.
+**Estado:** inventario estático del cliente web actual; no acredita paridad completa con todos los requisitos.
 
 ## UI y flujos activos
 
-Vite monta `web/src/main.ts`; `web/src/App.svelte` contiene la aplicación, navegación interna y estados de acceso. La vista cambia por estado `page` local; no hay sistema de rutas URL para cada pantalla.
+Vite monta `web/src/main.ts`; `web/src/App.svelte` contiene navegación interna, vistas y estados de acceso. La vista cambia por el estado `page`; no hay una URL independiente para cada pantalla.
 
-| Vista | Comportamiento visible |
+| Vista | Comportamiento |
 |---|---|
-| Acceso/registro | Login y registro local vía API; logout y cookie de sesión. Sin proveedores externos. |
-| Resumen/actividad | Muestra balance sandbox, operaciones recientes e historial devuelto por dashboard. |
-| Enviar pago | Formulario P2P; FX fixture cuando moneda de destino difiere. |
-| Solicitudes | Crear, listar recibidas/enviadas y aceptar/rechazar las entrantes pendientes. |
-| División | Crear reparto sandbox con participantes por ID; endpoint crea solicitudes individuales. |
-| Recurrentes | Crear, listar, pausar, activar y cancelar instrucciones; worker ejecuta vencimientos sandbox. |
-| Pago a comercio | Lista comercios demo; cotiza FX fixture si hace falta y envía pago sandbox. |
+| Acceso/registro | Inicio de sesión, registro local y cierre de sesión mediante API. |
+| Resumen/actividad | Saldos, operaciones recientes e historial del dashboard. |
+| Enviar pago | Formulario P2P y revisión previa cuando cambia la moneda de destino. |
+| Solicitudes | Creación, listado y resolución de solicitudes entrantes. |
+| División | Reparto con participantes, montos y solicitudes individuales. |
+| Recurrentes | Crear, listar, pausar, reactivar, modificar y cancelar programaciones. |
+| Pago a comercio | Seleccionar comercio, revisar importe y moneda y confirmar el pago. |
+| Herramientas de cuenta | Contactos, cuentas, notificaciones y recepción de fondos. |
 
-`AccountTools.svelte` añade contactos, cuentas ficticias enmascaradas, notificaciones y recepción simulada; `History.svelte` incorpora filtros, paginación y detalle privado; `SplitForm.svelte` implementa revisión exacta, reparto personalizado e inclusión del organizador. No hay recepción de un proveedor real ni administración de perfil/recuperación de acceso.
+`AccountTools.svelte` agrupa herramientas de cuenta; `History.svelte` presenta filtros, paginación y detalle; `SplitForm.svelte` implementa vista previa, reparto personalizado e inclusión del organizador.
 
 ## Stack y pruebas activas
 
-- `vite.config.ts` fija raíz `web/` y plugin Svelte. `web/src/app.css` define estilos del cliente.
-- `web/src/lib/api.ts` concentra llamadas `/api`; `web/src/lib/money.test.ts` valida precisión/fx de fixture y `oracle.integration.test.ts` contiene prueba API/Oracle condicional a `DB_CONNECT_STRING`.
-- Cypress E2E está configurado en `cypress.config.ts` para `cypress/e2e/**/*.cy.ts`; hoy hay `cypress/e2e/payments.cy.ts`. El spec intercepta `/api`, por lo que no sustituye la prueba Oracle real.
-- Vitest incluye `web/src/**/*.test.ts` en Vite. No hay Cypress Component Testing configurado en el camino activo.
+- `vite.config.ts` fija la raíz `web/` y el plugin Svelte; `web/src/app.css` contiene los estilos.
+- `web/src/lib/api.ts` concentra llamadas `/api`.
+- Vitest incluye `web/src/**/*.test.ts`, con funciones de dominio e integración API/Oracle condicionada a `DB_CONNECT_STRING`.
+- Cypress E2E usa `cypress.config.ts` y `cypress/e2e/`; los flujos de navegador interceptan `/api`.
+- No hay Cypress Component Testing configurado.
 
-## Limpieza de fuentes legacy
+## Límites del inventario
 
-La migración retiró la SPA React/TSX y sus pruebas, rutas GraphQL y backend lowdb/JSON, configuración Amplify, Yarn y parches/dependencias asociados. El frontend activo vive en `web/`, el servidor API en `backend/` y el esquema Oracle en `database/`. No se conservan las antiguas suites como pruebas activas.
-
-## Criterio para hablar de paridad
-
-La presencia de un formulario no acredita todos los criterios. El estado vigente se consulta en la [matriz única](../01_requisitos/matriz-trazabilidad.md) y los artefactos por revisión. Las pruebas Cypress con API interceptada y las pruebas Oracle reales se publican por separado.
+La SPA React/TSX y sus pruebas, las rutas GraphQL y el backend lowdb/JSON se retiraron del camino actual. El frontend está en `web/`, API en `backend/` y esquema en `database/`. La matriz vigente y la evidencia por ejecución definen el estado de criterios.

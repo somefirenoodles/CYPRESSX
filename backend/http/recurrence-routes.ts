@@ -8,6 +8,7 @@ import {
   runIdempotent,
 } from "../domain/idempotency";
 import { formatMinor, parseMinor } from "../domain/money";
+import { sanitizeUserVisibleCopy } from "../domain/display-copy";
 import { validatedCurrency } from "../domain/payments";
 import {
   MAX_RETRIES,
@@ -20,7 +21,7 @@ import {
 import { currentUser, requireUser } from "./auth";
 
 /**
- * Rutas de recurrencias sandbox.
+ * Rutas de gestión de pagos recurrentes.
  *
  * Reglas de negocio relevantes:
  * - Crear una recurrencia no cobra: sólo agenda la primera ocurrencia futura.
@@ -327,7 +328,7 @@ function toDto(row: RecurrenceRow): RecurrenceDto {
     retryCount: Number(row.RETRY_COUNT ?? 0),
     maxRetries: MAX_RETRIES,
     lastRunStatus: row.LAST_RUN_STATUS,
-    lastError: row.LAST_ERROR,
+    lastError: row.LAST_ERROR === null ? null : sanitizeUserVisibleCopy(row.LAST_ERROR),
     consentAt: row.CONSENT_AT === null ? null : toIso(row.CONSENT_AT),
   };
 }
@@ -354,7 +355,7 @@ function parseCurrency(value: string): string {
   try {
     return validatedCurrency(value.toUpperCase());
   } catch {
-    throw new RouteError(400, "Moneda no admitida en el sandbox.");
+    throw new RouteError(400, "Moneda no admitida.");
   }
 }
 

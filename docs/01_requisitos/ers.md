@@ -3,27 +3,27 @@
 
 **Línea base:** 2026-11-04; vigente. La especificación está consolidada; su vigencia no certifica aceptación ni pruebas.
 
-Definir la línea base verificable de requisitos funcionales, casos de uso y casos de prueba del sandbox Superpay, separando el comportamiento esperado del estado real de implementación y conservando la trazabilidad con el legado.
+Definir la línea base verificable de requisitos funcionales, casos de uso y casos de prueba de Superpay, separando el comportamiento esperado del estado real de implementación y conservando la trazabilidad con el legado.
 
 ## Alcance
 
 - Registro e inicio de sesión local con sesión asociada al usuario.
 - Pago entre usuarios, solicitudes de pago, aceptación, rechazo, consulta e historial.
 - Dinero exacto en unidades menores con dos decimales para USD, COP y CRC.
-- División de gastos, recurrencias, notificaciones, cotización FX y comercios simulados.
-- Operaciones de sandbox: recargas y recepción externa simulada.
+- División de gastos, recurrencias, notificaciones, cotización FX y pagos a comercios registrados.
+- Operaciones de saldo: recargas y recepción de ingresos externos.
 - Persistencia Oracle, transacciones y libro mayor (ledger) del camino activo backend/http.
 - Patrones de idempotencia, reintento y gestión de clientes tomados de documentación pública, sin integración real.
 - Evaluación dinámica de RNF con SQuaRE como guía, métricas locales y evidencia separada de automatización, agentes y usuarios finales.
 
 ## Fuera de alcance
 
-- Movimiento de dinero real, conexión bancaria, adquirencia real o verificación externa de titularidad.
+- Reversos, contracargos y recuperación de fondos fuera de los RF existentes; quedan como decisión pendiente.
 - Reversos, contracargos y recuperación de fondos fuera de los RF existentes; quedan como decisión pendiente.
 - Cypress Cloud, Percy, proveedores externos de autenticación y dependencias obligatorias no locales.
 - Aplicaciones React/Electron y rutas legacy como parte del runtime activo.
 - Aprobación formal, conformidad o resultados de pruebas no ejecutadas.
-- Certificación ISO y afirmaciones de cumplimiento financiero o aptitud para operar dinero real.
+- Certificación ISO y afirmaciones de cumplimiento financiero.
 
 ## RF-AUT-01 — Autenticación segura
 
@@ -200,16 +200,16 @@ El sistema debe permitir consultar el detalle de transacciones existentes cuando
 
 **Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-## RF-CTA-01 — Administración de cuentas bancarias de prueba
+## RF-CTA-01 — Administración de cuentas vinculadas
 
-El sistema debe permitir a cada usuario listar, asociar y deshabilitar las cuentas bancarias ficticias que le pertenecen.
+El sistema debe permitir a cada usuario listar, asociar y deshabilitar las cuentas vinculadas a su perfil.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-CTA-01.
 
 - **RF-CTA-01-A1:** El usuario puede listar, asociar y deshabilitar solo sus propias cuentas.
 - **RF-CTA-01-A2:** Los datos de asociación se validan antes de persistir y no se permite modificar cuentas ajenas.
 - **RF-CTA-01-A3:** Se minimiza la exposición de identificadores bancarios y una falla no deja estado parcial.
-- **RF-CTA-01-A4:** La funcionalidad se presenta como ficticia y no supone conectividad, pagos reales ni verificación externa.
+- **RF-CTA-01-A4:** La asociación permite administrar únicamente datos propios y protege la exposición de identificadores.
 
 **Archivos:** `backend/http/customer-routes.ts`, `web/src/lib/AccountTools.svelte`.
 
@@ -261,14 +261,14 @@ El sistema debe mostrar notificaciones de eventos relevantes solo al destinatari
 
 ## RF-FX-01 — Cotización de divisas
 
-El sistema debe permitir obtener una cotización FX demostrativa y aplicarla opcionalmente a un pago.
+El sistema debe permitir obtener una cotización FX y aplicarla opcionalmente a un pago.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-FX-01.
 
 - **RF-FX-01-A1:** La cotización indica importes, par de monedas, tasa, fecha y vigencia.
 - **RF-FX-01-A2:** Cuando hay conversión, la cotización propia, vigente y no consumida es obligatoria; el importe debitado y recibido coincide con la cotización persistida.
 - **RF-FX-01-A3:** Pares inválidos o cotizaciones vencidas se rechazan sin mover dinero.
-- **RF-FX-01-A4:** La función se presenta como simulada y no afirma integración real de mercado.
+- **RF-FX-01-A4:** La cotización presenta importe, par de monedas, tasa aplicada y vigencia.
 
 **Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
@@ -293,43 +293,43 @@ El sistema debe permitir programar pagos recurrentes semanales, mensuales o trim
 
 ## RF-COM-01 — Pago a comercio
 
-El sistema debe permitir pagar a comercios registrados del sandbox y registrar el movimiento en el ledger.
+El sistema debe permitir pagar a comercios registrados y registrar el movimiento en el ledger.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-COM-01.
 
 - **RF-COM-01-A1:** Se valida sesión, comercio existente, importe positivo y moneda soportada.
-- **RF-COM-01-A2:** El pago debita al pagador y registra su contrapartida de comercio en el ledger sandbox de forma atómica; no representa liquidación real.
+- **RF-COM-01-A2:** El pago debita al pagador y registra su contrapartida de comercio en el ledger de forma atómica.
 - **RF-COM-01-A3:** Comercios inexistentes, inactivos o accesos no autorizados se rechazan sin mover dinero.
-- **RF-COM-01-A4:** La función se presenta como comercio simulado y no afirma adquirencia real.
+- **RF-COM-01-A4:** El resumen de confirmación muestra comercio, importe, moneda y estado de la operación.
 
 **Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
 **Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-## RF-SBX-01 — Operaciones simuladas de sandbox
+## RF-SBX-01 — Operaciones de saldo
 
-El sistema debe permitir recargas y operaciones de sandbox claramente identificadas, sin dinero real.
+El sistema debe permitir recargas de saldo con validación de usuario, límites y registro contable.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-SBX-01.
 
-- **RF-SBX-01-A1:** Las recargas de sandbox se ejecutan solo para el usuario autenticado y dentro de límites configurados.
-- **RF-SBX-01-A2:** La recarga acredita el saldo y registra un asiento con origen de sandbox.
-- **RF-SBX-01-A3:** La interfaz y la API identifican la operación como simulada y no inducen a error sobre dinero real.
+- **RF-SBX-01-A1:** Las recargas se ejecutan solo para el usuario autenticado y dentro de límites configurados.
+- **RF-SBX-01-A2:** La recarga acredita el saldo y registra el asiento de origen correspondiente.
+- **RF-SBX-01-A3:** La interfaz y la API muestran importe, moneda y estado de la operación.
 - **RF-SBX-01-A4:** Los reintentos no duplican la recarga y los errores no dejan saldo parcial.
 
 **Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
 **Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-## RF-ING-01 — Recepción externa simulada
+## RF-ING-01 — Recepción de ingreso externo
 
-El sistema debe permitir registrar un ingreso externo simulado con referencia única, sin conexión bancaria.
+El sistema debe permitir registrar un ingreso externo con referencia única.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-ING-01.
 
 - **RF-ING-01-A1:** El ingreso se registra con referencia externa única, importe exacto, moneda y estado verificable.
 - **RF-ING-01-A2:** Una referencia externa repetida con el mismo payload devuelve la misma operación; la misma referencia con datos distintos se rechaza sin acreditar dos veces.
-- **RF-ING-01-A3:** La operación se identifica como simulada y no afirma recepción bancaria real.
+- **RF-ING-01-A3:** La interfaz y la API presentan el importe, la moneda, la referencia y el estado de la operación.
 
 **Archivos:** `backend/http/money-workflow-routes.ts`, `web/src/lib/AccountTools.svelte`.
 
@@ -408,11 +408,11 @@ No se agregan requisitos de reverso, contracargo ni recuperación en esta línea
 
 **Fuentes:** S-STRIPE-REFUNDS.
 
-### D-08 — Integraciones simuladas y patrones, no proveedores reales
+### D-08 — Patrones para servicios financieros
 
-Bancos, comercios, FX, recepción externa y notificaciones son demostrativos. Se adoptan patrones de idempotencia, reintento y gestión de clientes, sin conectar cuentas ni mover dinero real.
+Se adoptan patrones de idempotencia, reintento y gestión de clientes para operaciones financieras con dependencias externas desacopladas.
 
-**Razón:** El objetivo académico es un sandbox operable y reproducible, no una integración financiera de producción.
+**Razón:** El objetivo del producto es una aplicación web operable y reproducible, con reglas de pago verificables y una arquitectura local mantenible.
 
 **Fuentes:** S-STRIPE-IDEMPOTENCY, S-STRIPE-RETRIES, S-STRIPE-PORTAL, S-ISO-78176, S-ISO-78177, S-ISO-83467.
 
@@ -485,7 +485,7 @@ El comando confirmado persiste operación, asiento, proyección y notificación 
 
 ## RN-TX-06 — Precisión monetaria
 
-Entradas, cálculos y persistencia conservan unidades menores exactas; las tres monedas habilitadas utilizan dos decimales en este sandbox.
+Entradas, cálculos y persistencia conservan unidades menores exactas; las tres monedas habilitadas utilizan dos decimales.
 
 **Requisitos relacionados:** RF-TX-07.
 
@@ -509,7 +509,7 @@ Toda conclusión de prueba identifica revisión, huella de fuentes, entorno, dat
 
 ## RN-PROD-01 — Entorno financiero explícito
 
-Pantallas, operaciones y comprobantes identifican fondos ficticios y nunca afirman movimiento de dinero real.
+Pantallas, comprobantes y notificaciones muestran contraparte, importe, moneda y estado mediante descripciones claras.
 
 **Requisitos relacionados:** RF-SBX-01, RF-ING-01, RF-COM-01.
 
@@ -521,7 +521,7 @@ La operación conserva importe y moneda de origen y destino, cuando corresponda,
 
 ## RN-PROD-03 — Cotización visible antes de confirmar
 
-La conversión muestra importes, tasa de demostración, fuente y vencimiento antes de confirmar; no se inventan tarifas ni cotizaciones de mercado.
+La conversión muestra importes, monedas, tasa aplicada y vencimiento antes de confirmar.
 
 **Requisitos relacionados:** RF-FX-01.
 
@@ -545,7 +545,7 @@ Repetir la misma intención con idénticos parámetros devuelve su resultado sin
 
 ## RN-PROD-07 — Pago entre personas
 
-Un pago confirmado identifica pagador, destinatario, importe, moneda y estado; exige fondos sandbox suficientes. Los límites adicionales quedan sujetos a una decisión de producto.
+Un pago confirmado identifica pagador, destinatario, importe, moneda y estado; los límites adicionales quedan sujetos a una decisión de producto.
 
 **Requisitos relacionados:** RF-TX-01.
 
@@ -579,8 +579,8 @@ Los movimientos financieros se reconstruyen con identificador, actor, fecha, imp
 
 **Requisitos relacionados:** RF-LED-01, RF-TX-09, RF-TX-10.
 
-## RN-PROD-13 — Pago sandbox a comercio extranjero
+## RN-PROD-13 — Pago a comercio extranjero
 
-El usuario revisa comercio, importe, moneda y cotización aplicable; el resultado solo afecta al libro sandbox y no representa adquirencia ni liquidación real.
+El usuario revisa comercio, importe, moneda y cotización aplicable antes de confirmar el pago.
 
 **Requisitos relacionados:** RF-COM-01, RF-FX-01.

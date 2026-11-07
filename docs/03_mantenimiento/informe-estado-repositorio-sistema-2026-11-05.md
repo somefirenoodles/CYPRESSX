@@ -1,18 +1,16 @@
 # Examinación estática del código y los módulos de Superpay
 
-**Grupo:** #7  
-**Integrantes:** Michael Chen, Gabriel Gonzalez y Andres Wu  
-**Fecha de corte:** 5 de noviembre de 2026  
-**Revisión:** rama `codex/oracle-svelte-migration`, HEAD `afd5da9` (`2026-10-29`)  
+**Grupo:** #7
+**Integrantes:** Michael Chen, Gabriel Gonzalez y Andres Wu
+**Fecha de corte:** 5 de noviembre de 2026
+**Revisión:** rama `codex/sandbox-ledger-verification`, commit `7c8d961` (`2026-11-05`)
 **Alcance:** lectura estática del código fuente, configuración, migraciones y documentación de arquitectura. No se ejecutaron pruebas ni se evaluó el estado de los contenedores o servicios.
 
-El repositorio contiene una sustitución amplia del sistema original por una aplicación Svelte, API Express y persistencia Oracle. El código está organizado en capas reconocibles, pero parte importante de las rutas HTTP aún combina validación de entrada, autorización, SQL, transacciones, orquestación de dominio y construcción de respuestas. El módulo `domain/` concentra reglas monetarias compartidas —ledger, idempotencia, pagos y recurrencias—, aunque los casos de uso no están completamente separados de la capa HTTP y del acceso a datos. Esta examinación describe la estructura y sus consecuencias de mantenimiento; no certifica comportamiento ni calidad de ejecución.
+El commit más reciente inspeccionado consolida la aplicación Svelte, la API Express, Oracle y el ledger. El código tiene capas reconocibles, pero varias rutas HTTP combinan validación, autorización, SQL, transacciones, reglas de dominio y construcción de respuestas. `backend/domain/` concentra políticas compartidas, aunque algunos módulos dependen directamente de conexiones Oracle. Esta examinación describe módulos y acoplamientos estáticos; no certifica comportamiento de ejecución.
 
 ## 1. Estado del árbol de código
 
-La rama observada es `codex/oracle-svelte-migration`, con HEAD `afd5da9`. El árbol de trabajo está en transición: 21 archivos modificados, 206 eliminados y 41 sin seguimiento. Entre las eliminaciones están la aplicación React/TSX, GraphQL, Amplify, Yarn y lowdb; el árbol nuevo incorpora Svelte, API TypeScript, Oracle, Docker y documentación de requisitos y arquitectura. La cantidad de cambios hace difícil revisar la migración como una secuencia pequeña: el diff mezcla reemplazo de plataforma, dominio nuevo, infraestructura y artefactos de la materia.
-
-No se infiere quién produjo los cambios ni se evalúa su autoría. Para mantenimiento, conviene revisar y preservar el diff antes de cambiar de rama o descartar archivos, y mantener los artefactos nuevos identificables como fuente, generados o históricos.
+El agente dejó el commit `7c8d961` completo y el árbol limpio al terminar. El cambio reemplaza el runtime React/TSX, GraphQL, Amplify, Yarn y lowdb por Svelte, API TypeScript y Oracle. La revisión actual añade modificaciones locales de interfaz y documentación aún no comprometidas. No se infiere autoría adicional ni se descartan archivos.
 
 ## 2. Mapa de módulos
 
@@ -75,7 +73,7 @@ El ledger centraliza una invariante valiosa: cada asiento debe cuadrar por moned
 Aspectos que merecen revisión de código enfocada, antes de ampliar funciones:
 
 - `reconcileLedger()` agrupa entradas por `operation_id` y moneda, mientras las reglas de posting validan balance por asiento y moneda. Verificar que el esquema garantice una relación inequívoca entre una operación y un único asiento publicado, o alinear la consulta de conciliación con `journal_id`.
-- El error de saldo insuficiente y varios mensajes de dominio contienen la palabra “sandbox”; existe además copy visible que contradice la instrucción previa de no presentar esa etiqueta dentro de la interfaz. Este informe solo registra el hallazgo, no modifica textos.
+- Se encontraron textos de alcance de implementación en la UI y mensajes de API. En esta revisión se retiraron del cliente y de los mensajes expuestos; el límite financiero quedó concentrado en la nota técnica cerrada.
 - El cálculo de balance lee la suma histórica del ledger para las cuentas bloqueadas en cada posting. La corrección es clara desde el código; el costo de consulta no puede juzgarse sin planes/mediciones y queda fuera de esta revisión estática.
 - FX y contrapartidas operan con tasas/entidades internas; `postJournal` no se comunica con proveedor de FX, adquirente o red bancaria. El módulo representa contabilidad interna del producto, no liquidación externa.
 - La frontera de atomicidad depende de que los llamadores invoquen estas funciones dentro de la transacción externa. La documentación/comentario lo indica; conviene mantener esa precondición en tipos/API para evitar nuevos llamadores fuera del contexto correcto.
@@ -84,7 +82,7 @@ Aspectos que merecen revisión de código enfocada, antes de ampliar funciones:
 
 La app cliente está concentrada principalmente en `App.svelte` y componentes de `web/src/lib/` como `AccountTools.svelte`, `History.svelte` y `SplitForm.svelte`. El cliente API ofrece una única entrada `api`, que centraliza rutas y serialización, lo cual es un límite útil. Sin embargo, varios métodos y tipos están escritos en el mismo archivo y las respuestas usan `any`; un crecimiento de funcionalidades puede hacer que el contrato y las interacciones de pantalla sean difíciles de rastrear.
 
-La búsqueda estática anterior encontró textos de “sandbox”, “fondos ficticios” y “no se mueve dinero real” en pantallas y mensajes de API. La existencia de estos textos contradice la instrucción del producto de no usar ese lenguaje dentro de la app, aunque el límite del modelo financiero debe seguir descrito en documentación técnica. El copy se debe tratar como un defecto de presentación independiente del modelo contable.
+La interfaz reunía etiquetas técnicas junto a pagos, saldo, cuentas y recepción. Se retiraron las advertencias visibles y se ajustaron los mensajes que la API devolvía a los usuarios. La nota cerrada de alcance financiero queda como única descripción técnica de ese límite; los identificadores internos de persistencia y rutas no cambian.
 
 ## 7. Persistencia y esquema
 
@@ -94,28 +92,24 @@ Las seis migraciones reflejan crecimiento por etapas: esquema inicial, idempoten
 
 ## 8. Herramientas y consistencia del repositorio
 
-El stack actual declara Svelte 5, TypeScript, Vite, Express 4, Zod, Oracle, Vitest, Cypress y pnpm. `package.json` fija Node 22.20.x o 24.x y pnpm 10.12.1; scripts de generación de documentos y evidencia están separados de los comandos de aplicación. Docker usa build multi-stage según la configuración del repositorio.
-
-Se observa una diferencia documental en `docs/04_arquitectura/arquitectura-objetivo.md`: todavía enumera Vite 8.3.0 y Express 4.21.2, mientras `package.json` fija Vite 8.3.3 y Express 4.22.3. La ficha también conserva números de una verificación preliminar, por lo que debería distinguir datos históricos de evidencia vigente. El catálogo `docs/01_requisitos/catalogo.json` se declara fuente de ERS, CU, CP, RNF y matriz; los archivos derivados deben regenerarse con los scripts del repositorio.
+El stack vigente se declara ahora en `README.md` y `docs/00_proyecto/README.md`, con Svelte 5.57.1, TypeScript 5.9.3, Vite 8.3.3, Express 4.22.3, Zod 4.6.7, Oracle 23, `node-oracledb` 7.0.1, Node 22.20.0 y pnpm 10.12.1. `docs/04_arquitectura/arquitectura-objetivo.md` fue sincronizado con esas versiones y describe los módulos del runtime. El catálogo `docs/01_requisitos/catalogo.json` sigue como fuente de ERS, CU, CP, RNF y matriz.
 
 ## 9. Prioridades de mantenimiento basadas en el código
 
 | Prioridad | Trabajo | Motivo y límite sugerido |
 |---|---|---|
-| 1 | Revisar/corregir el copy visible prohibido | Acotado a textos de UI/respuestas; no tocar semántica de operaciones en el mismo cambio. |
-| 2 | Sincronizar ficha de arquitectura con las versiones y estructura activas | Cambio documental verificable contra manifiestos, entradas y carpetas; preservar datos históricos con fecha. |
+| 1 | Mantener el copy de interfaz sin etiquetas de implementación | Se ajustaron las pantallas y mensajes de API en esta revisión; queda pendiente validarlo con los criterios del producto. |
+| 2 | Mantener alineados los documentos de producto y stack | README, índice técnico y ficha de arquitectura fueron sincronizados con el stack vigente. |
 | 3 | Reducir `any` del cliente API y describir los DTO principales | Mejora el contrato web/API sin alterar rutas ni persistencia. |
 | 4 | Dividir responsabilidades de rutas por caso de uso | Empezar por un flujo pequeño, conservando endpoint, respuesta y límites transaccionales. Evitar una reescritura de todos los routers a la vez. |
 | 5 | Revisar invariantes/conciliación del ledger | Comparar esquema, claves y agrupaciones por operación/asiento; requiere revisión específica y validación Oracle posterior, no cambio casual. |
 | 6 | Documentar el modelo operativo del worker | Aclarar alcance de una instancia y condiciones para ejecutar varias; no añadir colas o servicios mientras no exista requerimiento probado. |
 
-## 10. Límites de esta examinación
+## 10. Alcance de la evidencia
 
-- Es una lectura estática del árbol de trabajo actual y de documentos seleccionados; no se ejecutaron pruebas, build, auditoría, migraciones ni profiling.
-- No se verificó el comportamiento de cada ruta frente a Oracle ni los criterios de aceptación de cada CU/CP.
-- No se midieron latencia, consumo de recursos ni consultas bajo carga; no se afirma que una alternativa sea más rápida o lenta.
-- Los puntos de acoplamiento son inferencias de la distribución de responsabilidades observada en los archivos, no defectos de ejecución ya reproducidos.
-- La conclusión se aplica al árbol local examinado en la rama indicada y puede no coincidir con un remoto o revisión posterior.
+El informe local del 4 de noviembre registra 48/48 Vitest (23 unitarias y 25 integraciones Oracle/Supertest), 5/5 Cypress con API interceptada, 9/9 pruebas Node/tooling, tipos y build aprobados, migraciones y conciliación Oracle y cinco comprobaciones HTTP sobre imagen con Oracle desechable. La huella de fuentes de ese informe (`a80dbdc5223ffefd37db404259d4423429de3954419a7353da5b18e7cc9a9777`) coincide con la del commit inspeccionado `7c8d961`, por lo que los resultados de código del día anterior corresponden a estas fuentes. El informe original registra que la ejecución inició en `afd5da9` con árbol sucio; el commit posterior consolidó esas mismas fuentes. Los cambios locales de copy, contrato HTTP y documentación realizados durante esta revisión son posteriores a esa huella y no están cubiertos por aquella campaña.
+
+Esa campaña ya cubre varios límites de seguridad y consistencia que esta examinación estática no volvió a ejecutar. No demuestra cobertura integral de todos los endpoints, criterios, recorridos visuales integrados, carga, recuperación de respaldos, ejecución multi-réplica ni experiencia con usuarios. No se ejecutaron pruebas ni builds durante la presente revisión. Los acoplamientos y riesgos descritos se derivan de la distribución de código inspeccionada; no se reportan como fallos reproducidos.
 
 ## Archivos revisados
 
@@ -124,4 +118,5 @@ Se observa una diferencia documental en `docs/04_arquitectura/arquitectura-objet
 - `backend/domain/ledger.ts`, `payments.ts`, `money.ts`, `idempotency.ts`, `notifications.ts`, `splits.ts`, `recurrence-policy.ts`, `recurrence-worker.ts`.
 - `backend/db/oracle.ts`, `backend/db/migrate.ts`, `database/migrations/001` a `006`.
 - `web/src/App.svelte`, `web/src/lib/api.ts`, componentes de `web/src/lib/`.
-- `docs/01_requisitos/catalogo.json`, `docs/04_arquitectura/arquitectura-objetivo.md`, `docs/04_arquitectura/ledger-interno.md`.
+- `docs/01_requisitos/catalogo.json`, `docs/04_arquitectura/arquitectura-objetivo.md`, `docs/04_arquitectura/ledger-interno.md`, `docs/04_arquitectura/flujos-financieros.md`, `docs/04_arquitectura/alcance-financiero-cerrado.md`.
+- Evidencia previa: `docs/02_pruebas/informe-verificacion-2026-11-04.md` y `reports/run.json`.

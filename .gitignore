@@ -8,3 +8,6 @@ cypress/videos/
 cypress/screenshots/
 *.log
 reports/
+local-work/
+/AGENTS.md
+/CODE_OF_CONDUCT.md

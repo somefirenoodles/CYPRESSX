@@ -80,7 +80,7 @@ export async function processDueRecurrences(): Promise<number> {
       processed += 1;
     }
   } catch (error) {
-    console.error("No se pudieron procesar las programaciones sandbox.", describeForLog(error));
+    console.error("No se pudieron procesar las programaciones.", describeForLog(error));
   } finally {
     running = false;
   }
@@ -325,7 +325,7 @@ async function rollbackAttempt(connection: Connection): Promise<void> {
 
 function classifyFailure(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
-  if (message.includes("Saldo sandbox insuficiente")) return INSUFFICIENT_FUNDS_MESSAGE;
+  if (message.includes("Saldo insuficiente")) return INSUFFICIENT_FUNDS_MESSAGE;
   // Nunca se persiste el mensaje técnico crudo: podría contener SQL.
   return TECHNICAL_FAILURE_MESSAGE;
 }

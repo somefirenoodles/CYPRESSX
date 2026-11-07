@@ -23,7 +23,7 @@ docker compose up -d oracle
 
 Oracle publica su listener local en `127.0.0.1:1887` (servicio `FREEPDB1`). El servicio `app` de Compose se conecta internamente a `oracle:1521`; no cambies ese destino interno.
 
-Cuando el contenedor esté saludable, crea el esquema y los datos sandbox de demo:
+Cuando el contenedor esté saludable, crea el esquema y los datos iniciales locales:
 
 ```powershell
 pnpm db:setup
@@ -46,9 +46,9 @@ pnpm build
 pnpm test:e2e
 ```
 
-`pnpm test` ejecuta Vitest. La integración Oracle se omite si `DB_CONNECT_STRING` no está configurado y requiere esquema accesible. `pnpm test:e2e` inicia la UI y corre Cypress en navegador; revisar el spec para distinguir interceptores de API real. Las cotizaciones, fondos y comercios son exclusivamente sandbox.
+`pnpm test` ejecuta Vitest. La integración Oracle se omite si `DB_CONNECT_STRING` no está configurado y requiere esquema accesible. `pnpm test:e2e` inicia la UI y corre Cypress en navegador; revisar el spec para distinguir interceptores de API real.
 
-Cypress E2E selecciona Edge en Windows (Chrome en Linux), sin Electron. La integración Oracle figura en CI con Oracle Free, pero en la última revisión local no se pudo ejecutar porque Docker daemon estaba apagado; iniciar Oracle localmente antes de usarla. Para validar el contenedor de producción: `docker compose up -d --build app`; Compose espera a que Oracle esté saludable y publica la web en `http://localhost:3000`.
+Cypress E2E selecciona Edge en Windows (Chrome en Linux). La integración Oracle figura en CI con Oracle Free, pero en la última revisión local no se pudo ejecutar porque Docker daemon estaba apagado; iniciar Oracle localmente antes de usarla. Para validar el contenedor de producción: `docker compose up -d --build app`; Compose espera a que Oracle esté saludable y publica la web en `http://localhost:3000`.
 
 ## Estado y límites
 

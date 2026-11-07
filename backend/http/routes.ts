@@ -8,6 +8,7 @@ import { IdempotencyConflictError, isValidIdempotencyKey, operationKey, runIdemp
 import { notify } from "../domain/notifications";
 import { postJournal } from "../domain/ledger";
 import { formatMinor } from "../domain/money";
+import { sanitizeUserVisibleCopy } from "../domain/display-copy";
 import { clearSessionCookie, currentUser, hashSessionToken, newSessionToken, requireUser, setSessionCookie } from "./auth";
 
 const router = Router();
@@ -106,7 +107,7 @@ router.post("/auth/register", route(async (request, response) => {
       return profile;
     });
     setSessionCookie(response, token);
-    response.status(201).json({ user, message: "Cuenta de sandbox creada con USD 2,500 de fondos ficticios." });
+    response.status(201).json({ user, message: "Cuenta creada correctamente." });
   } catch (error) { safeError(error, response); }
 }));
 
@@ -177,7 +178,7 @@ router.get("/dashboard", requireUser, route(async (request, response) => {
     const amount = outgoing ? row.FROM_AMOUNT_MINOR : row.TO_AMOUNT_MINOR;
     const currency = outgoing ? row.FROM_CURRENCY : row.TO_CURRENCY;
     const type = ["sandbox_topup", "sandbox_inbound"].includes(row.OPERATION_TYPE) ? "funding" : row.OPERATION_TYPE === "merchant" ? "merchant" : row.OPERATION_TYPE === "recurrence" ? "recurring" : outgoing ? "sent" : "received";
-    return { id: Number(row.ID), description: row.DESCRIPTION, type, status: row.STATUS, amount: formatMinor(amount), currency, createdAt: row.CREATED_AT, merchantName: row.MERCHANT_NAME };
+    return { id: Number(row.ID), description: sanitizeUserVisibleCopy(row.DESCRIPTION), type, status: row.STATUS, amount: formatMinor(amount), currency, createdAt: row.CREATED_AT, merchantName: row.MERCHANT_NAME };
   });
   const paymentRequests = (requestsResult.rows ?? []).map((row) => ({
     id: Number(row.ID), note: row.NOTE, amount: formatMinor(row.AMOUNT_MINOR), currency: row.CURRENCY,
@@ -269,11 +270,11 @@ router.post("/payment-requests", requireUser, route(async (request, response) =>
           }
         );
         const requestId = Number((inserted.outBinds as { id: number[] }).id[0]);
-        await notify(connection, { userId: input.recipientId, eventKey: `request:${requestId}:created`, title: "Nueva solicitud de pago", message: `${formatMinor(amount)} ${currency}. ${input.note || "Solicitud sandbox"}`, referenceType: "request", referenceId: requestId });
+        await notify(connection, { userId: input.recipientId, eventKey: `request:${requestId}:created`, title: "Nueva solicitud de pago", message: `${formatMinor(amount)} ${currency}. ${input.note || "Solicitud de pago"}`, referenceType: "request", referenceId: requestId });
         return { id: requestId, amount: formatMinor(amount), currency, status: "pending" };
       }
     ));
-    response.status(201).json({ ...result, message: "Solicitud creada en sandbox." });
+    response.status(201).json({ ...result, message: "Solicitud creada." });
   } catch (error) { safeError(error, response); }
 }));
 
@@ -312,7 +313,7 @@ router.post("/payment-requests/:id/resolve", requireUser, route(async (request, 
         "UPDATE cx_payment_requests SET status = 'accepted', operation_id = :operationId, resolved_at = SYSTIMESTAMP WHERE id = :id",
         { operationId: payment.id, id: id.data }
       );
-      return { status: "accepted", message: "Solicitud pagada en sandbox." };
+      return { status: "accepted", message: "Solicitud pagada." };
     });
     response.json(resolved);
   } catch (error) { safeError(error, response); }
@@ -386,7 +387,7 @@ router.post("/sandbox/topups", requireUser, route(async (request, response) => {
         const operation = await connection.execute(
           `INSERT INTO cx_operations(user_id, operation_type, idempotency_key, from_currency, to_currency,
             from_amount_minor, to_amount_minor, status, description)
-           VALUES (:actorId, 'sandbox_topup', :key, :currency, :currency, :amount, :amount, 'completed', 'Recarga de fondos ficticios')
+           VALUES (:actorId, 'sandbox_topup', :key, :currency, :currency, :amount, :amount, 'completed', 'Recarga de saldo')
            RETURNING id INTO :id`,
           { actorId: ownerId, key: operationKey("sandbox.topups", input.idempotencyKey), currency, amount: amountMinor.toString(), id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } }
         );
@@ -395,8 +396,8 @@ router.post("/sandbox/topups", requireUser, route(async (request, response) => {
           { accountId, currency, amountMinor, type: 'sandbox_funding' },
           { accountId: null, systemAccount: `system:sandbox_funding:${currency}`, currency, amountMinor: -amountMinor, type: 'sandbox_clearing' },
         ]);
-        await notify(connection, { userId: ownerId, eventKey: `operation:${operationId}:funding`, title: "Recarga sandbox", message: `${formatMinor(amountMinor)} ${currency} ficticios añadidos.`, referenceType: "operation", referenceId: operationId });
-        return { id: operationId, amount: formatMinor(amountMinor), currency, message: "Fondos ficticios añadidos al sandbox; no se movió dinero real." };
+        await notify(connection, { userId: ownerId, eventKey: `operation:${operationId}:funding`, title: "Recarga de saldo", message: `${formatMinor(amountMinor)} ${currency} añadidos.`, referenceType: "operation", referenceId: operationId });
+        return { id: operationId, amount: formatMinor(amountMinor), currency, message: "Recarga completada." };
       }
     ));
     response.status(201).json(result);

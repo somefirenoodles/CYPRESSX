@@ -66,7 +66,7 @@ export async function postJournal(connection: Connection, operationId: number, e
     const actual = await connection.execute<{ BALANCE: string }>(`SELECT COALESCE(SUM(e.amount_minor), 0) AS balance FROM cx_ledger_entries e
       JOIN cx_ledger_journals j ON j.id = e.journal_id WHERE e.account_id = :accountId AND j.status = 'posted'`, { accountId: id });
     const balance = BigInt(actual.rows?.[0]?.BALANCE ?? '0') + posting.delta;
-    if (balance < 0n) throw new Error('Saldo sandbox insuficiente.');
+    if (balance < 0n) throw new Error('Saldo insuficiente.');
     projected.set(id, balance);
   }
   for (const entry of entries) {

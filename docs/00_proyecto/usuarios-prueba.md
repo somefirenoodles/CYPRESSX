@@ -1,7 +1,7 @@
 # Datos de prueba: usuarios
 
 **ID:** DP-USR-01  
-**Propósito:** disponer de dos cuentas sintéticas para demostrar inicio de sesión, consulta de usuarios y operaciones P2P entre titulares distintos.
+**Propósito:** disponer de dos cuentas locales para verificar inicio de sesión, consulta de usuarios y operaciones P2P entre titulares distintos.
 
 ## Cuentas
 
@@ -10,7 +10,7 @@
 | `ana.prueba` | Ana Prueba | `ana.prueba@example.test` | `PruebaLocal-2026-A` | USD 2,500.00 |
 | `bruno.prueba` | Bruno Prueba | `bruno.prueba@example.test` | `PruebaLocal-2026-B` | USD 2,500.00 |
 
-Estas identidades y contraseñas son ficticias, reservadas para desarrollo local y no deben reutilizarse fuera de ese entorno. Las contraseñas se incluyen aquí para facilitar la demostración; la aplicación las procesa con bcrypt y Oracle almacena el hash.
+Estas cuentas y contraseñas se reservan para desarrollo y pruebas locales; no deben reutilizarse fuera de ese entorno. La aplicación procesa las contraseñas con bcrypt y Oracle almacena el hash.
 
 ## Preparación en la aplicación
 
@@ -29,4 +29,4 @@ La carga futura de estos mismos usuarios a Oracle debe ser idempotente y reutili
 
 ## Limpieza
 
-Para reiniciar la demostración, usa una base local desechable y el procedimiento de reinicialización documentado por el proyecto. No borres usuarios de una base compartida: operaciones, solicitudes y asientos pueden referenciarlos.
+Para reiniciar el entorno de prueba, usa una base local desechable y el procedimiento de reinicialización documentado por el proyecto. No borres usuarios de una base compartida: operaciones, solicitudes y asientos pueden referenciarlos.

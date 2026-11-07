@@ -2,7 +2,7 @@
 
 - **Estado:** aceptado e implementado en el camino activo.
 - **Fecha:** 2026-11-04.
-- **Alcance:** libro sandbox en USD, COP y CRC; no mueve dinero real ni certifica ISO.
+- **Alcance:** libro de movimientos en USD, COP y CRC.
 - **Fuentes:** [ERS](../01_requisitos/ers.md) y [matriz de trazabilidad](../01_requisitos/matriz-trazabilidad.md).
 
 ## Resumen
@@ -28,10 +28,7 @@ que Oracle sea el ledger de Stripe.
 
 ## Contexto
 
-La aplicación es una demo académica y operable en sandbox. Pagos, FX, saldos,
-comercios y top-ups son ficticios. El ledger actual vive en Oracle y conserva la
-atomicidad SQL de la escritura; esta decisión no reemplaza la consistencia
-transaccional con un libro eventualmente consistente.
+El ledger actual vive en Oracle y conserva la atomicidad SQL de la escritura; esta decisión no reemplaza la consistencia transaccional con un libro eventualmente consistente. El alcance financiero se registra en la [nota cerrada](./alcance-financiero-cerrado.md).
 
 La extracción a un microservicio es una posibilidad futura, no el diseño actual.
 Si se realiza, debe conservar el mismo modelo lógico y un contrato de comandos
@@ -43,7 +40,7 @@ de posting e identificadores estables.
   (`USD`, `COP` o `CRC`), `amountMinor` como `bigint` y `type`.
 - Las cuentas de usuario usan `account:<id>`. Las cuentas de sistema son
   explícitas: `system:fx:<moneda>`, `system:merchant:<id>:<moneda>` y
-  `system:sandbox_funding:<moneda>`.
+  cuentas de contrapartida para movimientos de abono.
 - Cada asiento tiene al menos dos partidas y suma cero **por moneda**. Las
   partidas de una operación FX no se suman entre divisas distintas.
 - `cx_ledger_journals` registra `operation_id` único, hash del payload y estado
@@ -83,8 +80,7 @@ de verdad.
 
 La migración conserva las entradas legacy y las valida al cierre; no borra
 datos. El DDL de Oracle puede confirmar parcialmente, por lo que cualquier
-cambio de esquema debe probarse primero sobre una copia o entorno sandbox antes
-de aplicarse al original.
+cambio de esquema debe probarse primero sobre una copia antes de aplicarse al original.
 
 ## Escalado futuro
 

@@ -1,5 +1,5 @@
 /**
- * Política local de recurrencias sandbox (no reproduce normas de proveedores externos).
+ * Política local de recurrencias programadas.
  *
  * Reglas:
  * - Calendario UTC: semanal suma 7 días; mensual/trimestral se anclan al día inicial.
@@ -25,7 +25,7 @@ const RETRY_DELAYS_MS: readonly number[] = [60 * 60 * 1000, 24 * 60 * 60 * 1000,
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Mensaje estable usado para clasificar fondos insuficientes (sin SQL). */
-export const INSUFFICIENT_FUNDS_MESSAGE = "Saldo sandbox insuficiente.";
+export const INSUFFICIENT_FUNDS_MESSAGE = "Saldo insuficiente.";
 
 /** Mensaje estable usado para fallos técnicos recuperables (sin SQL). */
 export const TECHNICAL_FAILURE_MESSAGE = "No se pudo completar el pago recurrente por un error técnico.";

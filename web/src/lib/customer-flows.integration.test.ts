@@ -103,7 +103,6 @@ describe.skipIf(!process.env.DB_CONNECT_STRING)('Flujos personales con Oracle', 
     const first = await owner.agent.post('/api/sandbox/inbound-transfers').send(payload).expect(201);
     const replay = await owner.agent.post('/api/sandbox/inbound-transfers').send({ ...payload, idempotencyKey: key() }).expect(201);
     expect(replay.body.id).toBe(first.body.id);
-    expect(first.body.mode).toBe('sandbox');
     await owner.agent.post('/api/sandbox/inbound-transfers').send({ ...payload, amount: '11.00', idempotencyKey: key() }).expect(409);
     expect(await balance(owner.agent)).toBe('2510.25');
   });

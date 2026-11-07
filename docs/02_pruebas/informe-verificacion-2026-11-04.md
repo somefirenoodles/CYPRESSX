@@ -2,7 +2,7 @@
 
 ## Resumen
 
-Verificación local del sandbox Superpay sobre el camino activo `web/` + `backend/http/`. Se ejecutaron 48 pruebas Vitest (23 unitarias + 25 Oracle/Supertest), todas aprobadas y sin omitidas; 5 pruebas Cypress en Edge con API interceptada; 9 pruebas Node/Tooling; `types` y `build` aprobados (116 módulos). Resultado: sandbox probado, liberación remota pendiente.
+Verificación local de Superpay sobre el camino activo `web/` + `backend/http/`. Se ejecutaron 48 pruebas Vitest (23 unitarias + 25 Oracle/Supertest), todas aprobadas y sin omitidas; 5 pruebas Cypress en Edge con API interceptada; 9 pruebas Node/Tooling; `types` y `build` aprobados (116 módulos). Resultado: flujos y controles ejecutados con aprobación; liberación remota pendiente.
 
 ## Pruebas ejecutadas
 
@@ -19,7 +19,7 @@ Se añadieron 10 pruebas: 8 de integración de seguridad (CP-SEC-01..07 + CP-TX-
 
 ## Base de datos y reconciliación
 
-Oracle Free 23.26.3 desplegado como entorno desechable con fixtures sintéticas: esquema 001 con saldo USD 123.45 preservado, migraciones 002..006 y seed. Reconciliación con `balanced`, `projectionsMatch`, `allCompletedPosted` y `noPendingJournals` en TRUE. No se usaron `.env`, datos reales ni dinero real.
+Oracle Free 23.26.3 desplegado como entorno desechable con fixtures sintéticas: esquema 001 con saldo USD 123.45 preservado, migraciones 002..006 y seed. Reconciliación con `balanced`, `projectionsMatch`, `allCompletedPosted` y `noPendingJournals` en TRUE. No se usaron archivos `.env` ni datos de usuarios.
 
 ## Imagen Docker y smoke
 
@@ -82,4 +82,4 @@ Referencias locales relativas a este informe:
 - Cypress (5 pruebas con API interceptada) no es E2E de UI contra API/Oracle en navegador. El smoke HTTP sí es real sobre API y DB, sirve la UI, pero no simula un usuario en navegador.
 - La concurrencia probada es funcional a pequeña escala; no demuestra capacidad de escalamiento.
 
-Estado: listo para el sandbox probado; liberación remota pendiente.
+Estado: ejecución local completada; liberación remota pendiente.

@@ -1,21 +1,23 @@
 # Superpay
 
-Aplicación académica web para prácticas de pruebas, mantenimiento y aseguramiento de calidad. El producto es una aplicación completa de operaciones **sandbox**: todas las operaciones, saldos, cotizaciones y comercios son de demostración; no se envía ni recibe dinero real ni se usan cotizaciones de mercado. El repositorio conserva la licencia MIT y atribución de Cypress Real World App en [`LICENSE`](./LICENSE).
+Superpay ofrece una aplicación web de pagos con transferencias entre usuarios, solicitudes, división de gastos, pagos recurrentes, pagos a comercios e historial. Este repositorio contiene el producto web, su API, persistencia relacional y la estrategia de mantenimiento y calidad. La atribución y licencia MIT de Cypress Real World App se conserva en [`LICENSE`](./LICENSE).
 
-## Stack activo
+## Stack vigente
 
-- Svelte 5 + TypeScript + Vite 8 (`web/`), en `http://localhost:3000`.
-- API modular Express + TypeScript (`backend/`), en `http://localhost:3001`.
-- Oracle Database Free 23 local y `node-oracledb` 7 Thin; ledger y balances en unidades menores enteras.
-- Sesiones opacas persistidas en Oracle; cotizaciones FX con tasas fijas de fixture de demostración.
-- Vitest para unitarias/integración Oracle y Cypress para E2E web.
-- Dockerfile multi-stage y servicio Compose `app`: en producción Express sirve el build Svelte; `tsx` se conserva como dependencia de runtime. Cypress E2E usa Edge en Windows o Chrome en Linux, sin Electron.
-- Node.js 22.20.0 y pnpm 10.12.1. La SPA React, lowdb, GraphQL, Amplify y proveedores de autenticación antiguos fueron retirados del árbol de trabajo.
+| Área | Tecnología | Versión o referencia |
+|---|---|---|
+| Cliente | Svelte + TypeScript + Vite | Svelte 5.57.1, TypeScript 5.9.3, Vite 8.3.3 |
+| API | Express + TypeScript + Zod | Express 4.22.3, Zod 4.6.7 |
+| Datos | Oracle Database Free + node-oracledb Thin | Oracle 23, driver 7.0.1 |
+| Validación | Vitest, Cypress, Node test runner | Suites y comandos en `package.json` |
+| Entorno | Node.js, pnpm, Docker Compose | Node 22.20.0, pnpm 10.12.1 |
 
-## Inicio local (Windows / PowerShell)
+La estructura activa se organiza en `web/`, `backend/http/`, `backend/domain/`, `backend/db/` y `database/migrations/`. La arquitectura y los módulos se detallan en [`docs/04_arquitectura/arquitectura-objetivo.md`](./docs/04_arquitectura/arquitectura-objetivo.md). El alcance financiero cerrado se registra en una nota técnica única.
+
+## Inicio local en Windows
 
 1. Instala Node.js 22.20.0, pnpm 10.12.1 y Docker Desktop.
-2. Crea `.env` a partir de `.env.example` y define credenciales locales propias. No uses valores productivos.
+2. Crea `.env` a partir de `.env.example` y define credenciales locales propias.
 3. Ejecuta:
 
 ```powershell
@@ -25,15 +27,15 @@ pnpm db:setup
 pnpm dev
 ```
 
-La UI inicia en `http://localhost:3000`; la API en `http://localhost:3001`. Registra una cuenta de prueba desde la pantalla. El alta crea fondos ficticios iniciales en sandbox.
+La interfaz inicia en `http://localhost:3000` y la API en `http://localhost:3001`. Crea una cuenta desde la pantalla de acceso.
 
-Para ejecutar la imagen de producción local con Compose (app en `http://localhost:3000`, Oracle como dependencia):
+Para iniciar el contenedor de la aplicación junto con Oracle:
 
 ```powershell
 docker compose up -d --build app
 ```
 
-## Verificación
+## Comandos del repositorio
 
 ```powershell
 pnpm types
@@ -42,10 +44,10 @@ pnpm build
 pnpm test:e2e
 ```
 
-La integración Oracle se omite si no está configurada. `pnpm test:oracle:isolated` crea un Oracle desechable y ejecuta migraciones, pruebas y conciliación sin reutilizar la base de trabajo. `pnpm docs:check` valida ERS/CU/RNF/trazabilidad y `pnpm ledger:check` concilia el entorno configurado. Los cinco escenarios Cypress usan respuestas API interceptadas; la integración de persistencia se prueba por separado.
+La integración Oracle se omite si `DB_CONNECT_STRING` no está configurada. `pnpm test:oracle:isolated` crea una instancia desechable para migraciones, API y conciliación. `pnpm docs:check` revisa los documentos generados; `pnpm ledger:check` concilia la base configurada. Cypress ejecuta los flujos web con respuestas API interceptadas; la persistencia se valida por separado.
 
-## Documentación del proyecto
+## Documentación
 
-La [ERS](docs/01_requisitos/ers.md), los [CU](docs/01_requisitos/casos-uso.md) y la [matriz única](docs/01_requisitos/matriz-trazabilidad.md) se generan desde un catálogo. Consulta la decisión del [ledger interno autoritativo](docs/04_arquitectura/ledger-interno.md).
+La [línea base de negocio y trazabilidad](./docs/01_requisitos/catalogo.json) es la fuente para ERS, CU, CP, RNF y matriz. La [arquitectura implementada](./docs/04_arquitectura/arquitectura-objetivo.md) describe stack y límites de módulos. El [índice del proyecto](./docs/00_proyecto/README.md) reúne reglas, pruebas, mantenimiento y entorno local.
 
-La guía reproducible está en [`docs/00_proyecto/entorno-windows.md`](./docs/00_proyecto/entorno-windows.md). La arquitectura, requisitos, invariantes, brechas y estrategia de prueba se navegan desde [`docs/00_proyecto/README.md`](./docs/00_proyecto/README.md).
+El [flujo de contribución](./CONTRIBUTING.md) explica qué se versiona, cómo coordinar cambios de código con trazabilidad y dónde guardar informes locales.

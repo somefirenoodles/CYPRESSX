@@ -35,7 +35,7 @@
   let banksLoading = $state(false);
   let banksError = $state('');
   let bankBusyId = $state<number | null>(null);
-  let bankForm = $state({ bankName: '', accountNumber: 'TEST-12345678', routingNumber: '123456789' });
+  let bankForm = $state({ bankName: '', accountNumber: '12345678', routingNumber: '123456789' });
   let bankSubmitting = $state(false);
   let bankFormError = $state('');
 
@@ -157,7 +157,7 @@
   async function submitBankAccount(event: SubmitEvent) {
     event.preventDefault();
     const bankName = bankForm.bankName.trim();
-    const accountNumber = bankForm.accountNumber.trim().toUpperCase();
+    const accountNumber = bankForm.accountNumber.trim();
     const routingNumber = bankForm.routingNumber.trim();
     bankFormError = '';
 
@@ -165,20 +165,20 @@
       bankFormError = 'Indique el nombre del banco.';
       return;
     }
-    if (!/^TEST-[0-9]{4,20}$/.test(accountNumber)) {
-      bankFormError = 'Use una cuenta ficticia con el formato TEST- seguido de dígitos.';
+    if (!/^[0-9]{4,20}$/.test(accountNumber)) {
+      bankFormError = 'Ingrese entre 4 y 20 dígitos para la cuenta.';
       return;
     }
     if (!/^[0-9]{9}$/.test(routingNumber)) {
-      bankFormError = 'El número de ruta ficticio debe tener 9 dígitos.';
+      bankFormError = 'El número de ruta debe tener 9 dígitos.';
       return;
     }
 
     bankSubmitting = true;
     try {
-      const data = await api.addBankAccount({ bankName, accountNumber, routingNumber });
+      const data = await api.addBankAccount({ bankName, accountNumber: `TEST-${accountNumber}`, routingNumber });
       banks = [...banks, data.account];
-      bankForm = { bankName: '', accountNumber: 'TEST-12345678', routingNumber: '123456789' };
+      bankForm = { bankName: '', accountNumber: '12345678', routingNumber: '123456789' };
     } catch (error) {
       bankFormError = errorText(error);
     } finally {
@@ -285,9 +285,8 @@
   <header class="at-header">
     <div>
       <h2>Herramientas de cuenta</h2>
-      <p>Contactos, bancos y avisos de su cuenta de prueba.</p>
+      <p>Contactos, bancos y avisos de su cuenta.</p>
     </div>
-    <span class="at-sandbox">Sandbox · fondos ficticios</span>
   </header>
 
   <nav class="at-tabs" aria-label="Secciones de herramientas de cuenta">
@@ -397,26 +396,26 @@
 
   {#if activeTab === 'banks'}
     <section id="at-panel-banks" aria-labelledby="at-tab-banks" class="at-panel">
-      <p class="at-note">Solo se admiten cuentas bancarias ficticias de prueba. En la lista solo se muestran los últimos 4 dígitos.</p>
+      <p class="at-note">En la lista solo se muestran los últimos 4 dígitos de cada cuenta.</p>
 
       <form class="at-form" onsubmit={submitBankAccount}>
         <div class="at-field">
           <label for="at-bank-name">Banco</label>
-          <input id="at-bank-name" type="text" bind:value={bankForm.bankName} required placeholder="Banco de prueba" />
+          <input id="at-bank-name" type="text" bind:value={bankForm.bankName} required placeholder="Nombre del banco" />
         </div>
         <div class="at-field">
-          <label for="at-bank-account">Número de cuenta ficticio</label>
+          <label for="at-bank-account">Número de cuenta</label>
           <input
             id="at-bank-account"
             type="text"
             bind:value={bankForm.accountNumber}
             required
-            pattern={"TEST-[0-9]+"}
-            placeholder="TEST-12345678"
+            pattern={"[0-9]{4,20}"}
+            placeholder="12345678"
           />
         </div>
         <div class="at-field">
-          <label for="at-bank-routing">Número de ruta ficticio</label>
+          <label for="at-bank-routing">Número de ruta</label>
           <input
             id="at-bank-routing"
             type="text"
@@ -427,7 +426,7 @@
           />
         </div>
         <button class="at-btn" type="submit" disabled={bankSubmitting}>
-          {bankSubmitting ? 'Añadiendo…' : 'Añadir cuenta ficticia'}
+          {bankSubmitting ? 'Añadiendo…' : 'Añadir cuenta'}
         </button>
       </form>
 
@@ -448,9 +447,9 @@
           <button type="button" class="at-btn at-btn-small" onclick={loadBanks}>Reintentar</button>
         </div>
       {:else if banks.length === 0}
-        <p class="at-muted">Todavía no hay cuentas ficticias vinculadas.</p>
+        <p class="at-muted">Todavía no hay cuentas vinculadas.</p>
       {:else}
-        <ul class="at-list" aria-label="Cuentas bancarias ficticias">
+        <ul class="at-list" aria-label="Cuentas bancarias">
           {#each banks as account (account.id)}
             <li class="at-item">
               <div class="at-item-main">
@@ -535,7 +534,7 @@
 
   {#if activeTab === 'transfer'}
     <section id="at-panel-transfer" aria-labelledby="at-tab-transfer" class="at-panel">
-      <p class="at-note">Recepción simulada de fondos ficticios. No se mueve dinero real.</p>
+      <p class="at-note">Revise los datos de la recepción antes de confirmar.</p>
 
       <form class="at-form" onsubmit={reviewTransfer}>
         <div class="at-form-grid">
@@ -593,12 +592,11 @@
 
       {#if review}
         <div class="at-review" aria-label="Resumen de la recepción">
-          <h3>Revise el ingreso ficticio</h3>
+          <h3>Revise la recepción</h3>
           <dl class="at-summary">
             <div><dt>Importe</dt><dd>{review.amount} {review.currency}</dd></div>
             <div><dt>Referencia externa</dt><dd>{review.externalReference}</dd></div>
             <div><dt>País de origen</dt><dd>{review.sourceCountry}</dd></div>
-            <div><dt>Modo</dt><dd>sandbox · fondos ficticios</dd></div>
           </dl>
           <div class="at-actions">
             <button type="button" class="at-btn" disabled={transferLoading} onclick={confirmTransfer}>
@@ -618,7 +616,7 @@
 
       {#if transferResult}
         <div class="at-success" role="status">
-          <strong>Recepción ficticia registrada</strong>
+          <strong>Recepción registrada</strong>
           <p>{transferResult.message}</p>
           <dl class="at-summary">
             <div><dt>Comprobante</dt><dd>#{transferResult.id}</dd></div>
@@ -626,7 +624,6 @@
             <div><dt>Importe</dt><dd>{transferResult.amount} {transferResult.currency}</dd></div>
             <div><dt>Referencia</dt><dd>{transferResult.externalReference}</dd></div>
             <div><dt>Origen</dt><dd>{transferResult.sourceCountry}</dd></div>
-            <div><dt>Modo</dt><dd>{transferResult.mode} · fondos ficticios</dd></div>
           </dl>
         </div>
       {/if}
@@ -658,17 +655,6 @@
     margin: 6px 0 0;
     color: var(--muted, #8790a2);
     font-size: 12px;
-  }
-  .at-sandbox {
-    padding: 6px 10px;
-    border: 1px solid #e4e0ff;
-    border-radius: 999px;
-    background: #f4f2ff;
-    color: #574ad3;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    white-space: nowrap;
   }
   .at-tabs {
     display: flex;

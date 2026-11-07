@@ -19,7 +19,7 @@ export function createApp() {
   app.get("/api/health", async (_request, response) => {
     try {
       await withConnection((connection) => connection.execute("SELECT 1 FROM dual"));
-      response.json({ status: "ok", database: "oracle", mode: "sandbox" });
+      response.json({ status: "ok", database: "oracle" });
     } catch (error) {
       console.error("Oracle health check failed", error);
       response.status(503).json({ status: "unavailable", database: "oracle" });

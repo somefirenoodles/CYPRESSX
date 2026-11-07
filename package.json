@@ -1,14 +1,14 @@
 {
-  "name": "cypressx",
+  "name": "superpay",
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Aplicación web de pagos sandbox con Svelte y Oracle SQL.",
+  "description": "Aplicación web de pagos con Svelte y Oracle SQL.",
   "repository": {
     "type": "git",
     "url": "https://github.com/somefirenoodles/CYPRESSX.git"
   },
-  "author": "Cypress.io contributors; adaptación académica Superpay",
+  "author": "Cypress.io contributors; adaptación Superpay",
   "license": "MIT",
   "engines": {
     "node": "22.20.x || 24.x"

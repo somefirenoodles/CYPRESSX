@@ -1,5 +1,5 @@
 <!-- Generado por pnpm docs:generate desde catalogo.json. No editar manualmente. -->
-# Invariantes financieros del sandbox
+# Invariantes financieros
 
 El ledger interno es la fuente de verdad. Cada asiento suma cero por moneda, se contabiliza atómicamente y no admite mutaciones posteriores. Los saldos son proyecciones conciliables. Consultar [ADR-LED-001](../04_arquitectura/ledger-interno.md).
 

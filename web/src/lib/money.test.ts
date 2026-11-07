@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { currencyPair, formatMinor, isCurrency, multiplyMinor, parseMinor } from "../../../backend/domain/money";
 
-describe("fixed-precision sandbox money", () => {
+describe("fixed-precision money", () => {
   it("parses decimal amounts as integer minor units", () => {
     expect(parseMinor("0.01")).toBe(1n);
     expect(parseMinor("2500")).toBe(250000n);

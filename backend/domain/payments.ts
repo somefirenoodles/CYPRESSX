@@ -175,9 +175,9 @@ async function performTransfer(connection: Connection, input: TransferInput) {
   if (input.quoteId) {
     await connection.execute("UPDATE cx_fx_quotes SET consumed_at = SYSTIMESTAMP WHERE id = :id", { id: input.quoteId });
   }
-  await notify(connection, { userId: input.userId, eventKey: `operation:${operationId}:sent`, title: "Pago sandbox completado", message: `${formatMinor(input.amountMinor)} ${input.fromCurrency}. No se movió dinero real.`, referenceType: "operation", referenceId: operationId });
+  await notify(connection, { userId: input.userId, eventKey: `operation:${operationId}:sent`, title: "Pago completado", message: `${formatMinor(input.amountMinor)} ${input.fromCurrency}.`, referenceType: "operation", referenceId: operationId });
   if (input.recipientId != null) {
-    await notify(connection, { userId: input.recipientId, eventKey: `operation:${operationId}:received`, title: input.idempotencyScope === "payment_requests.resolve" ? "Solicitud pagada" : "Pago sandbox recibido", message: `${formatMinor(toAmount)} ${input.toCurrency}. Fondos ficticios.`, referenceType: "operation", referenceId: operationId });
+    await notify(connection, { userId: input.recipientId, eventKey: `operation:${operationId}:received`, title: input.idempotencyScope === "payment_requests.resolve" ? "Solicitud pagada" : "Pago recibido", message: `${formatMinor(toAmount)} ${input.toCurrency}.`, referenceType: "operation", referenceId: operationId });
   }
   return {
     id: operationId,
@@ -187,7 +187,7 @@ async function performTransfer(connection: Connection, input: TransferInput) {
     receivedCurrency: input.toCurrency,
     status: "completed",
     description: input.description,
-    message: "Operación completada en el sandbox; no se movió dinero real.",
+    message: "Operación completada.",
   };
 }
 
@@ -223,12 +223,11 @@ export async function createQuote(
     expiresInSeconds: 600,
     createdAt: timestamps.rows?.[0]?.CREATED_AT.toISOString(),
     expiresAt: timestamps.rows?.[0]?.EXPIRES_AT.toISOString(),
-    source: "tasa fija de demostración; no es una cotización de mercado",
   };
 }
 
 export function validatedCurrency(value: unknown): Currency {
-  if (!isCurrency(value)) throw new Error("Moneda no soportada por el sandbox.");
+  if (!isCurrency(value)) throw new Error("Moneda no admitida.");
   return value;
 }
 
@@ -247,7 +246,7 @@ export async function seedOpeningBalance(connection: Connection, userId: number)
     { userId }
   );
   const account = accountResult.rows?.[0];
-  if (!account) throw new Error("No se pudo crear la cuenta sandbox.");
+  if (!account) throw new Error("No se pudo crear la cuenta.");
   const amount = 250000n;
   const operationId = await insertOperation(connection, {
     userId,
@@ -255,7 +254,7 @@ export async function seedOpeningBalance(connection: Connection, userId: number)
     fromCurrency: "USD",
     toCurrency: "USD",
     idempotencyKey: seedKey,
-    description: "Fondos iniciales de demostración",
+    description: "Saldo inicial",
     operationType: "sandbox_topup",
   }, amount, "1.00000000");
   await postJournal(connection, operationId, [

@@ -111,16 +111,16 @@ El sistema se evaluará respecto a instalaciones reproducibles aprobadas en ento
 
 ## RNF-SAF-01 — Seguridad operacional
 
-El sistema se evaluará respecto a flujos financieros que identifican correctamente el sandbox, en el contexto advertencias-sandbox-v1, con umbral local == 100 %.
+El sistema se evaluará respecto a la presentación completa y consistente de operaciones financieras, en el contexto presentacion-operaciones-v1, con umbral local == 100 %.
 
 **Prioridad:** alta. **Implementación:** Parcial. **CU:** CU-TX-01, CU-COM-01, CU-ING-01.
 
-- **RNF-SAF-01-A1:** Flujos financieros que identifican correctamente el sandbox: == 100 %; muestra mínima 7.
+- **RNF-SAF-01-A1:** Operaciones con importe, moneda, contraparte y estado correctos: == 100 %; muestra mínima 7.
 - **RNF-SAF-01-A2:** La evaluación identifica contexto, revisión/huella de fuentes, fecha, método, responsable y artefacto; evidencia omitida, obsoleta o insuficiente nunca se marca aprobada.
 
 **Archivos:** `scripts/traceability.mjs`, `scripts/evidence.mjs`.
 
-**Brechas:** La UI actual tiene advertencias incompletas; falta revisión de todos los recorridos.
+**Brechas:** Los recorridos de interfaz requieren revisión de consistencia de mensajes.
 
 ## RNF-USO-01 — Calidad en uso: logro de tareas
 
@@ -200,15 +200,15 @@ El sistema se evaluará respecto a valoración media tras completar tareas, en e
 
 ### RNF-SAF-01 — Seguridad operacional
 
-**Modelo:** ISO/IEC 25010:2023. **Métrica:** Flujos financieros que identifican correctamente el sandbox. **Umbral local:** == 100 %; n >= 7.
+**Modelo:** ISO/IEC 25010:2023. **Métrica:** Operaciones con importe, moneda, contraparte y estado correctos. **Umbral local:** == 100 %; n >= 7.
 
-**Método:** Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar avisos visibles y respuestas API con evidencia de UI y revisión de agente identificada.. **Contexto:** advertencias-sandbox-v1. **Responsable:** Equipo de implementación y calidad. **Reevaluar:** Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos..
+**Método:** Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar datos visibles y respuestas API con evidencia de UI y revisión identificada.. **Contexto:** presentacion-operaciones-v1. **Responsable:** Equipo de implementación y calidad. **Reevaluar:** Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos..
 
 ### RNF-USO-01 — Calidad en uso: logro de tareas
 
 **Modelo:** ISO/IEC 25019:2023. **Métrica:** Tareas completadas correctamente sin asistencia. **Umbral local:** >= 90 %; n >= 10.
 
-**Método:** Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos ficticios; informar tareas, aciertos y tiempo, sin usar agentes como participantes.. **Contexto:** usuarios-primer-uso-v1. **Responsable:** Equipo de evaluación y usuarios finales. **Reevaluar:** Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos..
+**Método:** Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos preparados; informar tareas, aciertos y tiempo, sin usar agentes como participantes.. **Contexto:** usuarios-primer-uso-v1. **Responsable:** Equipo de evaluación y usuarios finales. **Reevaluar:** Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos..
 
 ### RNF-SAT-01 — Calidad en uso: valoración del usuario
 

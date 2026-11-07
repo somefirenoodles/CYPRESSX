@@ -19,7 +19,6 @@ export type InboundTransferResult = {
   currency: string;
   externalReference: string;
   sourceCountry: string;
-  mode: 'sandbox';
   message: string;
 };
 

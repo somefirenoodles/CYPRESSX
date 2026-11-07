@@ -59,16 +59,16 @@ El sistema debe permitir consultar el detalle de transacciones existentes cuando
 
 **Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-## RF-CTA-01 — Administración de cuentas bancarias de prueba
+## RF-CTA-01 — Administración de cuentas vinculadas
 
-El sistema debe permitir a cada usuario listar, asociar y deshabilitar las cuentas bancarias ficticias que le pertenecen.
+El sistema debe permitir a cada usuario listar, asociar y deshabilitar las cuentas vinculadas a su perfil.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-CTA-01.
 
 - **RF-CTA-01-A1:** El usuario puede listar, asociar y deshabilitar solo sus propias cuentas.
 - **RF-CTA-01-A2:** Los datos de asociación se validan antes de persistir y no se permite modificar cuentas ajenas.
 - **RF-CTA-01-A3:** Se minimiza la exposición de identificadores bancarios y una falla no deja estado parcial.
-- **RF-CTA-01-A4:** La funcionalidad se presenta como ficticia y no supone conectividad, pagos reales ni verificación externa.
+- **RF-CTA-01-A4:** La asociación permite administrar únicamente datos propios y protege la exposición de identificadores.
 
 **Archivos:** `backend/http/customer-routes.ts`, `web/src/lib/AccountTools.svelte`.
 
@@ -120,14 +120,14 @@ El sistema debe mostrar notificaciones de eventos relevantes solo al destinatari
 
 ## RF-FX-01 — Cotización de divisas
 
-El sistema debe permitir obtener una cotización FX demostrativa y aplicarla opcionalmente a un pago.
+El sistema debe permitir obtener una cotización FX y aplicarla opcionalmente a un pago.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-FX-01.
 
 - **RF-FX-01-A1:** La cotización indica importes, par de monedas, tasa, fecha y vigencia.
 - **RF-FX-01-A2:** Cuando hay conversión, la cotización propia, vigente y no consumida es obligatoria; el importe debitado y recibido coincide con la cotización persistida.
 - **RF-FX-01-A3:** Pares inválidos o cotizaciones vencidas se rechazan sin mover dinero.
-- **RF-FX-01-A4:** La función se presenta como simulada y no afirma integración real de mercado.
+- **RF-FX-01-A4:** La cotización presenta importe, par de monedas, tasa aplicada y vigencia.
 
 **Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
@@ -152,43 +152,43 @@ El sistema debe permitir programar pagos recurrentes semanales, mensuales o trim
 
 ## RF-COM-01 — Pago a comercio
 
-El sistema debe permitir pagar a comercios registrados del sandbox y registrar el movimiento en el ledger.
+El sistema debe permitir pagar a comercios registrados y registrar el movimiento en el ledger.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-COM-01.
 
 - **RF-COM-01-A1:** Se valida sesión, comercio existente, importe positivo y moneda soportada.
-- **RF-COM-01-A2:** El pago debita al pagador y registra su contrapartida de comercio en el ledger sandbox de forma atómica; no representa liquidación real.
+- **RF-COM-01-A2:** El pago debita al pagador y registra su contrapartida de comercio en el ledger de forma atómica.
 - **RF-COM-01-A3:** Comercios inexistentes, inactivos o accesos no autorizados se rechazan sin mover dinero.
-- **RF-COM-01-A4:** La función se presenta como comercio simulado y no afirma adquirencia real.
+- **RF-COM-01-A4:** El resumen de confirmación muestra comercio, importe, moneda y estado de la operación.
 
 **Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
 **Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-## RF-SBX-01 — Operaciones simuladas de sandbox
+## RF-SBX-01 — Operaciones de saldo
 
-El sistema debe permitir recargas y operaciones de sandbox claramente identificadas, sin dinero real.
+El sistema debe permitir recargas de saldo con validación de usuario, límites y registro contable.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-SBX-01.
 
-- **RF-SBX-01-A1:** Las recargas de sandbox se ejecutan solo para el usuario autenticado y dentro de límites configurados.
-- **RF-SBX-01-A2:** La recarga acredita el saldo y registra un asiento con origen de sandbox.
-- **RF-SBX-01-A3:** La interfaz y la API identifican la operación como simulada y no inducen a error sobre dinero real.
+- **RF-SBX-01-A1:** Las recargas se ejecutan solo para el usuario autenticado y dentro de límites configurados.
+- **RF-SBX-01-A2:** La recarga acredita el saldo y registra el asiento de origen correspondiente.
+- **RF-SBX-01-A3:** La interfaz y la API muestran importe, moneda y estado de la operación.
 - **RF-SBX-01-A4:** Los reintentos no duplican la recarga y los errores no dejan saldo parcial.
 
 **Archivos:** `backend/http/routes.ts`, `backend/domain/payments.ts`, `web/src/App.svelte`.
 
 **Brechas:** Sin brechas estáticas registradas; requiere evidencia dinámica.
 
-## RF-ING-01 — Recepción externa simulada
+## RF-ING-01 — Recepción de ingreso externo
 
-El sistema debe permitir registrar un ingreso externo simulado con referencia única, sin conexión bancaria.
+El sistema debe permitir registrar un ingreso externo con referencia única.
 
 **Prioridad:** media. **Implementación:** Presente en código. **CU:** CU-ING-01.
 
 - **RF-ING-01-A1:** El ingreso se registra con referencia externa única, importe exacto, moneda y estado verificable.
 - **RF-ING-01-A2:** Una referencia externa repetida con el mismo payload devuelve la misma operación; la misma referencia con datos distintos se rechaza sin acreditar dos veces.
-- **RF-ING-01-A3:** La operación se identifica como simulada y no afirma recepción bancaria real.
+- **RF-ING-01-A3:** La interfaz y la API presentan el importe, la moneda, la referencia y el estado de la operación.
 
 **Archivos:** `backend/http/money-workflow-routes.ts`, `web/src/lib/AccountTools.svelte`.
 

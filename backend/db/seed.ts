@@ -24,10 +24,10 @@ async function main() {
     }
     await connection.commit();
   });
-  console.log("Comercios sandbox cargados.");
+  console.log("Comercios cargados.");
 }
 
 main().catch((error) => {
-  console.error("No se pudieron cargar los datos sandbox.", error);
+  console.error("No se pudieron cargar los datos.", error);
   process.exitCode = 1;
 }).finally(closePool);

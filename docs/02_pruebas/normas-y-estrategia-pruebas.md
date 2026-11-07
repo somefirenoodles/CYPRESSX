@@ -1,8 +1,8 @@
 # Normas y estrategia de pruebas
 
 **Estado:** estrategia vigente; catálogo, criterios y resultados se distinguen en la matriz única y los artefactos de ejecución.
-**Objetivo:** probar la aplicación web activa con Svelte 5, API Express/TypeScript, Oracle SQL y operaciones exclusivamente sandbox. React y Electron quedan excluidos del producto objetivo.
-**Límite:** este documento no define cumplimiento regulatorio ni autoriza operaciones de dinero real.
+**Objetivo:** probar la aplicación web activa con Svelte 5, API Express/TypeScript, Oracle SQL y los flujos financieros definidos en la línea base del producto.
+**Límite:** este documento define la ejecución de pruebas y no determina cumplimiento regulatorio.
 
 ## Normas y guías seleccionadas
 
@@ -30,13 +30,13 @@ Comandos configurados en el repositorio: `pnpm types`, `pnpm build`, `pnpm test`
 
 ## Niveles y orden de prueba
 
-1. **Unitarias (Vitest):** límites de monto, transiciones permitidas, partición de gastos y traducción de estados sandbox, aislando reglas puras de la base de datos.
+1. **Unitarias (Vitest):** límites de monto, transiciones permitidas, partición de gastos y traducción de estados de operación, aislando reglas puras de la base de datos.
 2. **Integración de persistencia Oracle (Vitest + Oracle de prueba):** constraints, queries, rollback, concurrencia e idempotencia en repositorios/transacciones reales. Cada suite usa datos propios y limpieza determinista.
 3. **API (Cypress o cliente HTTP de prueba):** autorización, contrato HTTP, estados, idempotencia y fallos del adaptador. Validar persistencia y saldo desde consultas preparadas por el backend de pruebas, no editando archivos JSON.
 4. **E2E web (Cypress):** flujos visibles de pago, solicitud, división y recurrentes cuando estén implementados; usar viewport móvil adaptable además del escritorio.
 5. **Revisión estática y seguridad:** `pnpm types` y checklist ASVS seleccionado. No se documenta comando de lint activo; revisar tooling antes de incorporarlo. Esto no sustituye integración, E2E ni revisión especializada.
 
-Orden sugerido por cambio: unitarias → integración Oracle → API → E2E del flujo afectado → suite relevante completa. Las pruebas con dinero usan datos sintéticos y ambiente sandbox; nunca apuntan a cuentas o proveedores reales.
+Orden sugerido por cambio: unitarias → integración Oracle → API → E2E del flujo afectado → suite relevante completa. Las pruebas financieras usan datos sintéticos y un entorno aislado; no requieren credenciales de proveedores externos.
 
 ## Casos de prueba prioritarios
 
@@ -50,7 +50,7 @@ Por cada ejecución guardar: ID de CP, commit, entorno y versión Oracle, migrac
 
 ## Normativa de operaciones financieras reales
 
-Fuera de alcance: este proyecto utiliza fondos y respuestas sandbox/simuladas; no se evalúan transferencias, custodia ni liquidación reales. Si el alcance cambia, identificar países, entidades operadoras y flujos primero y solicitar asesoría especializada por jurisdicción antes de seleccionar cualquier normativa. Este documento no ofrece conclusiones jurídicas ni una lista legal de obligaciones.
+Fuera del alcance de esta guía: evaluar transferencias, custodia, liquidación o requisitos regulatorios por jurisdicción. Si el alcance cambia, identificar países, entidades operadoras y flujos primero y solicitar asesoría especializada antes de seleccionar cualquier normativa. Este documento no ofrece conclusiones jurídicas ni una lista legal de obligaciones.
 
 ## Fuentes oficiales consultadas
 

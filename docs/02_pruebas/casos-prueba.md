@@ -11,7 +11,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Usuario sintético registrado y activo.
 
-**Datos:** {"usuario":"ana.sandbox","password":"[dato sintético proporcionado durante la ejecución; no registrar]"}
+**Datos:** {"usuario":"ana.test","password":"[dato sintético proporcionado durante la ejecución; no registrar]"}
 
 **Pasos:**
 
@@ -21,7 +21,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Resultado esperado:**
 
 - La autenticación responde con sesión válida.
-- El recurso privado devuelve datos de ana.sandbox y no de otro usuario.
+- El recurso privado devuelve datos de ana.test y no de otro usuario.
 
 **Automatización:** Diseñado; automatización pendiente o evaluación humana.
 
@@ -34,7 +34,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 - Usuario sintético registrado.
 - No existe sesión activa.
 
-**Datos:** {"usuario":"ana.sandbox","password":"[dato sintético proporcionado durante la ejecución; no registrar]"}
+**Datos:** {"usuario":"ana.test","password":"[dato sintético proporcionado durante la ejecución; no registrar]"}
 
 **Pasos:**
 
@@ -58,7 +58,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Identificador sintético no registrado.
 
-**Datos:** {"usuario":"nuevo.sandbox","password":"[dato sintético proporcionado durante la ejecución; no registrar]","confirmacion":"Sintetica-02"}
+**Datos:** {"usuario":"nuevo.test","password":"[dato sintético proporcionado durante la ejecución; no registrar]","confirmacion":"Sintetica-02"}
 
 **Pasos:**
 
@@ -82,7 +82,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Existe un usuario sintético registrado.
 
-**Datos:** {"usuario":"ana.sandbox","password":"[dato sintético proporcionado durante la ejecución; no registrar]","confirmacion":"Sintetica-04"}
+**Datos:** {"usuario":"ana.test","password":"[dato sintético proporcionado durante la ejecución; no registrar]","confirmacion":"Sintetica-04"}
 
 **Pasos:**
 
@@ -106,7 +106,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 - Pagador y destinatario sintéticos existen.
 - El pagador tiene saldo suficiente.
 
-**Datos:** {"pagador":"ana.sandbox","destinatario":"bruno.sandbox","importe":"10.00","moneda":"USD","clave":"pago-001"}
+**Datos:** {"pagador":"ana.test","destinatario":"bruno.test","importe":"10.00","moneda":"USD","clave":"pago-001"}
 
 **Pasos:**
 
@@ -155,7 +155,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Solicitante y destinatario sintéticos existen.
 
-**Datos:** {"solicitante":"ana.sandbox","destinatario":"bruno.sandbox","importe":"25.50","moneda":"USD"}
+**Datos:** {"solicitante":"ana.test","destinatario":"bruno.test","importe":"25.50","moneda":"USD"}
 
 **Pasos:**
 
@@ -202,7 +202,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Existe una solicitud pendiente entre dos usuarios sintéticos.
 
-**Datos:** {"solicitud":"solicitud-001","actor":"bruno.sandbox"}
+**Datos:** {"solicitud":"solicitud-001","actor":"bruno.test"}
 
 **Pasos:**
 
@@ -222,10 +222,10 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Existe una solicitud de ana.sandbox.
+- Existe una solicitud de ana.test.
 - Existe un tercero autenticado.
 
-**Datos:** {"solicitud":"solicitud-001","actor":"carla.sandbox"}
+**Datos:** {"solicitud":"solicitud-001","actor":"carla.test"}
 
 **Pasos:**
 
@@ -247,7 +247,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Solicitud pendiente con destinatario con saldo suficiente.
 
-**Datos:** {"solicitud":"solicitud-002","actor":"bruno.sandbox","importe":"25.50"}
+**Datos:** {"solicitud":"solicitud-002","actor":"bruno.test","importe":"25.50"}
 
 **Pasos:**
 
@@ -270,7 +270,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Solicitud ya aceptada.
 
-**Datos:** {"solicitud":"solicitud-002","actor":"bruno.sandbox"}
+**Datos:** {"solicitud":"solicitud-002","actor":"bruno.test"}
 
 **Pasos:**
 
@@ -290,10 +290,10 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- ana.sandbox tiene pagos y solicitudes propios.
+- ana.test tiene pagos y solicitudes propios.
 - Existen movimientos de otro usuario.
 
-**Datos:** {"actor":"ana.sandbox"}
+**Datos:** {"actor":"ana.test"}
 
 **Pasos:**
 
@@ -317,7 +317,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Dos usuarios con movimientos distintos.
 
-**Datos:** {"actor":"carla.sandbox"}
+**Datos:** {"actor":"carla.test"}
 
 **Pasos:**
 
@@ -339,7 +339,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Existe una transacción con participante autorizado.
 
-**Datos:** {"transaccion":"tx-001","actor":"ana.sandbox"}
+**Datos:** {"transaccion":"tx-001","actor":"ana.test"}
 
 **Pasos:**
 
@@ -359,9 +359,9 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Existe una transacción de ana.sandbox.
+- Existe una transacción de ana.test.
 
-**Datos:** {"transaccion":"tx-001","actor":"carla.sandbox"}
+**Datos:** {"transaccion":"tx-001","actor":"carla.test"}
 
 **Pasos:**
 
@@ -383,7 +383,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Solicitud pendiente con destinatario autenticado.
 
-**Datos:** {"solicitud":"solicitud-003","actor":"bruno.sandbox"}
+**Datos:** {"solicitud":"solicitud-003","actor":"bruno.test"}
 
 **Pasos:**
 
@@ -406,7 +406,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 - Solicitud rechazada.
 - Existe un tercero autenticado.
 
-**Datos:** {"solicitud":"solicitud-003","actor":"carla.sandbox"}
+**Datos:** {"solicitud":"solicitud-003","actor":"carla.test"}
 
 **Pasos:**
 
@@ -518,7 +518,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Dos usuarios sintéticos con recursos propios.
 
-**Datos:** {"actor":"ana.sandbox","recurso":"propio"}
+**Datos:** {"actor":"ana.test","recurso":"propio"}
 
 **Pasos:**
 
@@ -540,7 +540,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Recurso perteneciente a otro usuario.
 
-**Datos:** {"actor":"carla.sandbox","recurso":"de ana"}
+**Datos:** {"actor":"carla.test","recurso":"de ana"}
 
 **Pasos:**
 
@@ -556,7 +556,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Automatización:** Diseñado; automatización pendiente o evaluación humana.
 
-## CP-CTA-01 — Usuario administra sus cuentas ficticias
+## CP-CTA-01 — Usuario administra sus cuentas vinculadas
 
 **Nivel:** integration. **Tipo:** mixed. **Criterios:** RF-CTA-01-A1, RF-CTA-01-A2, RF-CTA-01-A3, RF-CTA-01-A4.
 
@@ -564,12 +564,12 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Usuario autenticado sin cuentas asociadas.
 
-**Datos:** {"titular":"ana.sandbox","cuenta":"ficticia-001"}
+**Datos:** {"titular":"ana.test","cuenta":"cuenta-001"}
 
 **Pasos:**
 
 1. Listar cuentas.
-2. Asociar una cuenta ficticia válida.
+2. Asociar una cuenta válida.
 3. Deshabilitarla.
 
 **Resultado esperado:**
@@ -586,9 +586,9 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Existe una cuenta ficticia de ana.sandbox.
+- Existe una cuenta vinculada de ana.test.
 
-**Datos:** {"actor":"carla.sandbox","cuenta":"ficticia-001"}
+**Datos:** {"actor":"carla.test","cuenta":"cuenta-001"}
 
 **Pasos:**
 
@@ -600,7 +600,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - La modificación ajena se rechaza.
 - Los datos inválidos no dejan estado parcial.
-- La UI indica que la cuenta es ficticia y sin conexión bancaria.
+- La cuenta muestra su alias y estado.
 
 **Automatización:** Diseñado; automatización pendiente o evaluación humana.
 
@@ -612,7 +612,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Existen usuarios con distinta visibilidad.
 
-**Datos:** {"consulta":"bru","actor":"ana.sandbox"}
+**Datos:** {"consulta":"bru","actor":"ana.test"}
 
 **Pasos:**
 
@@ -633,10 +633,10 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- ana.sandbox ya tiene a bruno como contacto.
+- ana.test ya tiene a bruno como contacto.
 - Existe una transacción histórica entre ambos.
 
-**Datos:** {"actor":"ana.sandbox","contacto":"bruno.sandbox"}
+**Datos:** {"actor":"ana.test","contacto":"bruno.test"}
 
 **Pasos:**
 
@@ -777,7 +777,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Un usuario con eventos y otro sin eventos.
 
-**Datos:** {"actor":"ana.sandbox"}
+**Datos:** {"actor":"ana.test"}
 
 **Pasos:**
 
@@ -799,7 +799,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Solicitud ya resuelta.
 
-**Datos:** {"solicitud":"solicitud-004","actor":"bruno.sandbox"}
+**Datos:** {"solicitud":"solicitud-004","actor":"bruno.test"}
 
 **Pasos:**
 
@@ -834,7 +834,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - La cotización incluye tasa, fecha y vigencia.
 - El débito coincide exactamente con lo cotizado.
-- La UI indica que es demostrativa.
+- La pantalla muestra importe, moneda y vigencia.
 
 **Automatización:** Diseñado; automatización pendiente o evaluación humana.
 
@@ -891,9 +891,9 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Recurrencia de ana.sandbox vencida.
+- Recurrencia de ana.test vencida.
 
-**Datos:** {"actor":"carla.sandbox","recurrencia":"rec-001"}
+**Datos:** {"actor":"carla.test","recurrencia":"rec-001"}
 
 **Pasos:**
 
@@ -939,7 +939,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Comercio activo y pagador con saldo.
 
-**Datos:** {"comercio":"cafe.sandbox","importe":"7.50","moneda":"USD"}
+**Datos:** {"comercio":"cafe.test","importe":"7.50","moneda":"USD"}
 
 **Pasos:**
 
@@ -962,7 +962,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Existe un comercio inactivo.
 
-**Datos:** {"comercio":"inactivo.sandbox","importe":"7.50"}
+**Datos:** {"comercio":"inactivo.test","importe":"7.50"}
 
 **Pasos:**
 
@@ -974,11 +974,11 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Ambos pagos se rechazan sin mover dinero.
 - No se crea asiento.
-- La UI indica comercio simulado.
+- La pantalla muestra comercio, importe y estado.
 
 **Automatización:** Diseñado; automatización pendiente o evaluación humana.
 
-## CP-SBX-01 — Recarga de sandbox acredita saldo y asiento de origen simulado
+## CP-SBX-01 — Recarga acredita saldo y registra un asiento de origen
 
 **Nivel:** integration. **Tipo:** positive. **Criterios:** RF-SBX-01-A1, RF-SBX-01-A2.
 
@@ -986,7 +986,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Usuario autenticado dentro del límite.
 
-**Datos:** {"actor":"ana.sandbox","importe":"50.00","moneda":"USD"}
+**Datos:** {"actor":"ana.test","importe":"50.00","moneda":"USD"}
 
 **Pasos:**
 
@@ -996,8 +996,8 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Resultado esperado:**
 
 - El saldo aumenta 50.00.
-- Se registra un asiento con origen sandbox.
-- La operación se identifica como simulada.
+- Se registra un asiento con el origen correspondiente.
+- La operación muestra importe, moneda y estado.
 
 **Automatización:** Diseñado; automatización pendiente o evaluación humana.
 
@@ -1021,11 +1021,11 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - La recarga fuera de límite se rechaza.
 - La repetición no duplica el crédito.
-- La UI no simula dinero real.
+- La repetición conserva el mismo saldo y el mismo registro.
 
 **Automatización:** Diseñado; automatización pendiente o evaluación humana.
 
-## CP-ING-01 — Ingreso externo simulado con referencia única
+## CP-ING-01 — Ingreso externo con referencia única
 
 **Nivel:** integration. **Tipo:** mixed. **Criterios:** RF-ING-01-A1, RF-ING-01-A3, RF-ING-01-A2.
 
@@ -1044,7 +1044,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - El saldo aumenta exactamente 100.00.
 - El asiento conserva la referencia única.
-- La operación se muestra como simulada.
+- La operación muestra importe, moneda, referencia y estado.
 
 **Automatización:** vitest: `web/src/lib/customer-flows.integration.test.ts` — `[CP-ING-01]`.
 
@@ -1078,7 +1078,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** 0; -1; 0.01; 1.001; notación exponencial; máximo de 12 dígitos enteros.
 
@@ -1099,7 +1099,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Importes sintéticos de borde y representativos en USD, COP y CRC.
 
@@ -1120,7 +1120,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Solicitudes pendientes independientes para aceptación, rechazo y concurrencia.
 
@@ -1141,7 +1141,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Solicitante, pagador y tercero sintéticos.
 
@@ -1162,7 +1162,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Transacción Oracle aislada e inyección de error tras débito antes de contrapartida.
 
@@ -1183,7 +1183,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Total 30.00, dos participantes válidos distintos del organizador.
 
@@ -1204,7 +1204,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Total 30.00 y mismo participante dos veces.
 
@@ -1225,7 +1225,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto matriz-funcional-v1; muestra mínima 1; artefactos sintéticos sin secretos.
 
@@ -1247,7 +1247,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto oracle-local-20-concurrentes-v1; muestra mínima 100; artefactos sintéticos sin secretos.
 
@@ -1269,7 +1269,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto edge-chrome-escritorio-v1; muestra mínima 2; artefactos sintéticos sin secretos.
 
@@ -1291,7 +1291,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto teclado-escritorio-usuarios-v1; muestra mínima 10; artefactos sintéticos sin secretos.
 
@@ -1313,7 +1313,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto oracle-fallos-concurrencia-v1; muestra mínima 10; artefactos sintéticos sin secretos.
 
@@ -1335,7 +1335,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto api-tres-actores-v1; muestra mínima 12; artefactos sintéticos sin secretos.
 
@@ -1357,7 +1357,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto catalogo-ci-v1; muestra mínima 1; artefactos sintéticos sin secretos.
 
@@ -1379,7 +1379,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto windows-linux-contenedor-v1; muestra mínima 2; artefactos sintéticos sin secretos.
 
@@ -1401,13 +1401,13 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
-**Datos:** Contexto advertencias-sandbox-v1; muestra mínima 7; artefactos sintéticos sin secretos.
+**Datos:** Contexto presentacion-operaciones-v1; muestra mínima 7; artefactos sintéticos sin secretos.
 
 **Pasos:**
 
-1. Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar avisos visibles y respuestas API con evidencia de UI y revisión de agente identificada.
+1. Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar datos visibles y respuestas API con evidencia de UI y revisión identificada.
 2. Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo.
 
 **Resultado esperado:**
@@ -1423,13 +1423,13 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto usuarios-primer-uso-v1; muestra mínima 10; artefactos sintéticos sin secretos.
 
 **Pasos:**
 
-1. Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos ficticios; informar tareas, aciertos y tiempo, sin usar agentes como participantes.
+1. Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos preparados; informar tareas, aciertos y tiempo, sin usar agentes como participantes.
 2. Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo.
 
 **Resultado esperado:**
@@ -1445,7 +1445,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda.
+- Oracle preparado cuando corresponda; datos de prueba locales.
 
 **Datos:** Contexto usuarios-primer-uso-v1; muestra mínima 10; artefactos sintéticos sin secretos.
 
@@ -1469,7 +1469,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1490,7 +1490,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1511,7 +1511,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1532,7 +1532,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1553,7 +1553,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1574,7 +1574,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1595,7 +1595,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1616,7 +1616,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1637,7 +1637,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1658,7 +1658,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1679,7 +1679,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1702,7 +1702,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1723,7 +1723,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1744,7 +1744,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1769,7 +1769,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1791,7 +1791,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1812,7 +1812,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1827,7 +1827,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Automatización:** vitest: `web/src/lib/customer-flows.integration.test.ts` — `[CP-REC-04]`.
 
-## CP-WEB-01 — logs in and shows sandbox state without contacting a bank
+## CP-WEB-01 — inicia sesión y consulta el estado de su cuenta
 
 **Nivel:** e2e. **Tipo:** positive. **Criterios:** RF-AUT-01-A1, RF-SBX-01-A3.
 
@@ -1835,7 +1835,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1845,11 +1845,11 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Resultado esperado:**
 
 - Las credenciales se validan en el servidor y la sesión queda asociada al usuario correcto.
-- La interfaz y la API identifican la operación como simulada y no inducen a error sobre dinero real.
+- La interfaz y la API muestran importe, moneda y estado de la operación.
 
 **Automatización:** cypress: `cypress/e2e/payments.cy.ts` — `[CP-WEB-01]`.
 
-## CP-WEB-02 — requests a sandbox quote before posting an international P2P payment
+## CP-WEB-02 — requests a quote before posting an international P2P payment
 
 **Nivel:** e2e. **Tipo:** positive. **Criterios:** RF-FX-01-A1, RF-FX-01-A4.
 
@@ -1857,7 +1857,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1867,7 +1867,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Resultado esperado:**
 
 - La cotización indica importes, par de monedas, tasa, fecha y vigencia.
-- La función se presenta como simulada y no afirma integración real de mercado.
+- La cotización presenta importe, par de monedas, tasa aplicada y vigencia.
 
 **Automatización:** cypress: `cypress/e2e/payments.cy.ts` — `[CP-WEB-02]`.
 
@@ -1879,7 +1879,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1901,7 +1901,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1923,7 +1923,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Fixtures sintéticos y entorno aislado; Oracle preparado para integración.
 
-**Datos:** Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.
+**Datos:** Los datos y los límites se fijan en la suite enlazada.
 
 **Pasos:**
 
@@ -1932,7 +1932,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Resultado esperado:**
 
-- La funcionalidad se presenta como ficticia y no supone conectividad, pagos reales ni verificación externa.
+- La asociación permite administrar únicamente datos propios y protege la exposición de identificadores.
 - Se presenta un estado vacío cuando no existen notificaciones.
 
 **Automatización:** cypress: `cypress/e2e/flows.cy.ts` — `[CP-WEB-05]`.
@@ -1955,7 +1955,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 - Se conservan los centavos, se validan límites y las entradas inválidas se rechazan.
 
-**Automatización:** vitest: `web/src/lib/money.test.ts` — `fixed-precision sandbox money`.
+**Automatización:** vitest: `web/src/lib/money.test.ts` — `fixed-precision money`.
 
 ## CP-LED-06 — Conservar movimientos y proyecciones del esquema anterior
 
@@ -1984,7 +1984,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado.
+- Oracle desechable preparado; datos de prueba locales.
 
 **Datos:** Petición sin cookie de sesión y petición autenticada de control.
 
@@ -2007,7 +2007,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Precondiciones:**
 
 - Usuario sintético registrado y activo.
-- Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado.
+- Oracle desechable preparado; datos de prueba locales.
 
 **Datos:** Credenciales sintéticas válidas proporcionadas durante la ejecución; no registrar.
 
@@ -2030,7 +2030,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Precondiciones:**
 
 - Usuario sintético registrado y activo.
-- Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado.
+- Oracle desechable preparado; datos de prueba locales.
 
 **Datos:** Credenciales válidas e inválidas de usuarios existentes e inexistentes; cookies revocadas o vencidas.
 
@@ -2054,7 +2054,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Precondiciones:**
 
 - Usuario sintético registrado.
-- Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado.
+- Oracle desechable preparado; datos de prueba locales.
 
 **Datos:** Cadenas sintéticas con comillas, operadores y comentarios SQL en login, identificador y cursor.
 
@@ -2078,7 +2078,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Precondiciones:**
 
 - Pagador y destinatario sintéticos con saldo suficiente.
-- Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado.
+- Oracle desechable preparado; datos de prueba locales.
 
 **Datos:** Contraseña de más de 72 bytes y campos de registro sobrantes; pago con userId y ownerId ajenos.
 
@@ -2103,7 +2103,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 **Precondiciones:**
 
 - Usuario sintético con saldo y otro usuario destinatario.
-- Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado.
+- Oracle desechable preparado; datos de prueba locales.
 
 **Datos:** Importes negativos, cero y con más decimales de los admitidos; clave idempotente demasiado corta; autosolicitud.
 
@@ -2126,7 +2126,7 @@ Los resultados esperados son criterios de diseño. Los resultados observados se 
 
 **Precondiciones:**
 
-- Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado.
+- Oracle desechable preparado; datos de prueba locales.
 
 **Datos:** Cuerpo JSON truncado y cuerpo sintético que excede el límite de tamaño.
 

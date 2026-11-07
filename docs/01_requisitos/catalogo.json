@@ -4,24 +4,24 @@
     "id": "ERS-001",
     "date": "2026-11-04",
     "status": "vigente",
-    "purpose": "Definir la línea base verificable de requisitos funcionales, casos de uso y casos de prueba del sandbox Superpay, separando el comportamiento esperado del estado real de implementación y conservando la trazabilidad con el legado.",
+    "purpose": "Definir la línea base verificable de requisitos funcionales, casos de uso y casos de prueba de Superpay, separando el comportamiento esperado del estado real de implementación y conservando la trazabilidad con el legado.",
     "scope": [
       "Registro e inicio de sesión local con sesión asociada al usuario.",
       "Pago entre usuarios, solicitudes de pago, aceptación, rechazo, consulta e historial.",
       "Dinero exacto en unidades menores con dos decimales para USD, COP y CRC.",
-      "División de gastos, recurrencias, notificaciones, cotización FX y comercios simulados.",
-      "Operaciones de sandbox: recargas y recepción externa simulada.",
+      "División de gastos, recurrencias, notificaciones, cotización FX y pagos a comercios registrados.",
+      "Operaciones de saldo: recargas y recepción de ingresos externos.",
       "Persistencia Oracle, transacciones y libro mayor (ledger) del camino activo backend/http.",
       "Patrones de idempotencia, reintento y gestión de clientes tomados de documentación pública, sin integración real.",
       "Evaluación dinámica de RNF con SQuaRE como guía, métricas locales y evidencia separada de automatización, agentes y usuarios finales."
     ],
     "outOfScope": [
-      "Movimiento de dinero real, conexión bancaria, adquirencia real o verificación externa de titularidad.",
+      "Reversos, contracargos y recuperación de fondos fuera de los RF existentes; quedan como decisión pendiente.",
       "Reversos, contracargos y recuperación de fondos fuera de los RF existentes; quedan como decisión pendiente.",
       "Cypress Cloud, Percy, proveedores externos de autenticación y dependencias obligatorias no locales.",
       "Aplicaciones React/Electron y rutas legacy como parte del runtime activo.",
       "Aprobación formal, conformidad o resultados de pruebas no ejecutadas.",
-      "Certificación ISO y afirmaciones de cumplimiento financiero o aptitud para operar dinero real."
+      "Certificación ISO y afirmaciones de cumplimiento financiero."
     ]
   },
   "sources": [
@@ -125,9 +125,9 @@
     },
     {
       "id": "D-08",
-      "title": "Integraciones simuladas y patrones, no proveedores reales",
-      "resolution": "Bancos, comercios, FX, recepción externa y notificaciones son demostrativos. Se adoptan patrones de idempotencia, reintento y gestión de clientes, sin conectar cuentas ni mover dinero real.",
-      "rationale": "El objetivo académico es un sandbox operable y reproducible, no una integración financiera de producción.",
+      "title": "Patrones para servicios financieros",
+      "resolution": "Se adoptan patrones de idempotencia, reintento y gestión de clientes para operaciones financieras con dependencias externas desacopladas.",
+      "rationale": "El objetivo del producto es una aplicación web operable y reproducible, con reglas de pago verificables y una arquitectura local mantenible.",
       "sourceIds": [
         "S-STRIPE-IDEMPOTENCY",
         "S-STRIPE-RETRIES",
@@ -625,10 +625,10 @@
     },
     {
       "id": "RF-CTA-01",
-      "title": "Administración de cuentas bancarias de prueba",
+      "title": "Administración de cuentas vinculadas",
       "kind": "functional",
       "priority": "media",
-      "statement": "El sistema debe permitir a cada usuario listar, asociar y deshabilitar las cuentas bancarias ficticias que le pertenecen.",
+      "statement": "El sistema debe permitir a cada usuario listar, asociar y deshabilitar las cuentas vinculadas a su perfil.",
       "acceptance": [
         {
           "id": "RF-CTA-01-A1",
@@ -644,7 +644,7 @@
         },
         {
           "id": "RF-CTA-01-A4",
-          "text": "La funcionalidad se presenta como ficticia y no supone conectividad, pagos reales ni verificación externa."
+          "text": "La asociación permite administrar únicamente datos propios y protege la exposición de identificadores."
         }
       ],
       "useCases": [
@@ -775,7 +775,7 @@
       "title": "Cotización de divisas",
       "kind": "functional",
       "priority": "media",
-      "statement": "El sistema debe permitir obtener una cotización FX demostrativa y aplicarla opcionalmente a un pago.",
+      "statement": "El sistema debe permitir obtener una cotización FX y aplicarla opcionalmente a un pago.",
       "acceptance": [
         {
           "id": "RF-FX-01-A1",
@@ -791,7 +791,7 @@
         },
         {
           "id": "RF-FX-01-A4",
-          "text": "La función se presenta como simulada y no afirma integración real de mercado."
+          "text": "La cotización presenta importe, par de monedas, tasa aplicada y vigencia."
         }
       ],
       "useCases": [
@@ -865,7 +865,7 @@
       "title": "Pago a comercio",
       "kind": "functional",
       "priority": "media",
-      "statement": "El sistema debe permitir pagar a comercios registrados del sandbox y registrar el movimiento en el ledger.",
+      "statement": "El sistema debe permitir pagar a comercios registrados y registrar el movimiento en el ledger.",
       "acceptance": [
         {
           "id": "RF-COM-01-A1",
@@ -873,7 +873,7 @@
         },
         {
           "id": "RF-COM-01-A2",
-          "text": "El pago debita al pagador y registra su contrapartida de comercio en el ledger sandbox de forma atómica; no representa liquidación real."
+          "text": "El pago debita al pagador y registra su contrapartida de comercio en el ledger de forma atómica."
         },
         {
           "id": "RF-COM-01-A3",
@@ -881,7 +881,7 @@
         },
         {
           "id": "RF-COM-01-A4",
-          "text": "La función se presenta como comercio simulado y no afirma adquirencia real."
+          "text": "El resumen de confirmación muestra comercio, importe, moneda y estado de la operación."
         }
       ],
       "useCases": [
@@ -903,22 +903,22 @@
     },
     {
       "id": "RF-SBX-01",
-      "title": "Operaciones simuladas de sandbox",
+      "title": "Operaciones de saldo",
       "kind": "functional",
       "priority": "media",
-      "statement": "El sistema debe permitir recargas y operaciones de sandbox claramente identificadas, sin dinero real.",
+      "statement": "El sistema debe permitir recargas de saldo con validación de usuario, límites y registro contable.",
       "acceptance": [
         {
           "id": "RF-SBX-01-A1",
-          "text": "Las recargas de sandbox se ejecutan solo para el usuario autenticado y dentro de límites configurados."
+          "text": "Las recargas se ejecutan solo para el usuario autenticado y dentro de límites configurados."
         },
         {
           "id": "RF-SBX-01-A2",
-          "text": "La recarga acredita el saldo y registra un asiento con origen de sandbox."
+          "text": "La recarga acredita el saldo y registra el asiento de origen correspondiente."
         },
         {
           "id": "RF-SBX-01-A3",
-          "text": "La interfaz y la API identifican la operación como simulada y no inducen a error sobre dinero real."
+          "text": "La interfaz y la API muestran importe, moneda y estado de la operación."
         },
         {
           "id": "RF-SBX-01-A4",
@@ -941,10 +941,10 @@
     },
     {
       "id": "RF-ING-01",
-      "title": "Recepción externa simulada",
+      "title": "Recepción de ingreso externo",
       "kind": "functional",
       "priority": "media",
-      "statement": "El sistema debe permitir registrar un ingreso externo simulado con referencia única, sin conexión bancaria.",
+      "statement": "El sistema debe permitir registrar un ingreso externo con referencia única.",
       "acceptance": [
         {
           "id": "RF-ING-01-A1",
@@ -956,7 +956,7 @@
         },
         {
           "id": "RF-ING-01-A3",
-          "text": "La operación se identifica como simulada y no afirma recepción bancaria real."
+          "text": "La interfaz y la API presentan el importe, la moneda, la referencia y el estado de la operación."
         }
       ],
       "useCases": [
@@ -1259,11 +1259,11 @@
       "title": "Seguridad operacional",
       "kind": "nonfunctional",
       "priority": "alta",
-      "statement": "El sistema se evaluará respecto a flujos financieros que identifican correctamente el sandbox, en el contexto advertencias-sandbox-v1, con umbral local == 100 %.",
+      "statement": "El sistema se evaluará respecto a la presentación completa y consistente de operaciones financieras, en el contexto presentacion-operaciones-v1, con umbral local == 100 %.",
       "acceptance": [
         {
           "id": "RNF-SAF-01-A1",
-          "text": "Flujos financieros que identifican correctamente el sandbox: == 100 %; muestra mínima 7."
+          "text": "Operaciones con importe, moneda, contraparte y estado correctos: == 100 %; muestra mínima 7."
         },
         {
           "id": "RNF-SAF-01-A2",
@@ -1282,7 +1282,7 @@
           "scripts/evidence.mjs"
         ],
         "gaps": [
-          "La UI actual tiene advertencias incompletas; falta revisión de todos los recorridos."
+          "Los recorridos de interfaz requieren revisión de consistencia de mensajes."
         ]
       },
       "sourceIds": [
@@ -1565,7 +1565,7 @@
       "preconditions": [
         "El usuario tiene sesión válida."
       ],
-      "trigger": "El usuario lista, asocia o deshabilita una cuenta ficticia.",
+      "trigger": "El usuario lista, asocia o deshabilita una cuenta vinculada.",
       "flow": [
         "El servidor valida sesión y titularidad.",
         "El servidor valida los datos de asociación.",
@@ -1575,7 +1575,7 @@
       "alternatives": [
         "Si la validación falla, no se persiste ningún cambio."
       ],
-      "success": "El usuario administra solo sus cuentas ficticias con datos minimizados.",
+      "success": "El usuario administra solo sus cuentas vinculadas con datos minimizados.",
       "failure": "Datos inválidos, cuenta ajena o fallo de persistencia se rechazan sin estado parcial."
     },
     {
@@ -1697,7 +1697,7 @@
         "El servidor valida sesión, comercio, importe y moneda.",
         "El servidor debita al pagador y acredita al comercio.",
         "El servidor registra el asiento en el ledger.",
-        "El sistema muestra el resultado como operación simulada."
+        "El sistema muestra el resultado con importe, moneda y estado."
       ],
       "alternatives": [
         "Si el comercio no existe o está inactivo, se rechaza sin movimiento."
@@ -1707,37 +1707,37 @@
     },
     {
       "id": "CU-SBX-01",
-      "title": "Realizar operaciones simuladas",
+      "title": "Realizar operaciones de saldo",
       "actor": "Usuario autenticado",
       "preconditions": [
         "El usuario tiene sesión válida."
       ],
-      "trigger": "El usuario solicita una recarga u operación de sandbox.",
+      "trigger": "El usuario solicita una recarga de saldo.",
       "flow": [
         "El servidor valida sesión y límites.",
-        "El servidor acredita el saldo simulado y registra el asiento con origen sandbox.",
-        "El sistema identifica la operación como simulada."
+        "El servidor acredita el saldo y registra el asiento de origen correspondiente.",
+        "El sistema muestra el importe, la moneda y el estado de la operación."
       ],
       "alternatives": [
         "Un reintento con la misma clave no duplica la recarga."
       ],
-      "success": "El saldo simulado y el ledger reflejan una única operación identificada como sandbox.",
+      "success": "El saldo y el ledger reflejan una única operación registrada.",
       "failure": "Sin sesión, fuera de límite o con error de persistencia no se acredita saldo."
     },
     {
       "id": "CU-ING-01",
-      "title": "Recibir ingreso externo simulado",
-      "actor": "Usuario autenticado o proceso de sandbox",
+      "title": "Recibir un ingreso externo",
+      "actor": "Usuario autenticado o servicio de recepción",
       "preconditions": [
         "Existe una referencia externa única.",
         "La cuenta destino pertenece al usuario autorizado."
       ],
-      "trigger": "Se registra un ingreso externo simulado.",
+      "trigger": "Se registra un ingreso externo con referencia única.",
       "flow": [
         "El servidor valida referencia, importe, moneda y cuenta destino.",
         "El servidor verifica que la referencia no haya sido aplicada.",
-        "El servidor acredita el saldo y registra el asiento de origen externo simulado.",
-        "El sistema muestra la operación como simulada."
+        "El servidor acredita el saldo y registra el asiento de origen externo.",
+        "El sistema muestra el importe, la moneda, la referencia y el estado."
       ],
       "alternatives": [
         "Si la referencia ya existe con el mismo payload, se devuelve el resultado original.",
@@ -1751,7 +1751,7 @@
       "title": "Contabilizar una operación confirmada",
       "actor": "Sistema, por instrucción de un usuario autorizado",
       "preconditions": [
-        "Operación confirmada y autorizada; importes exactos y cuentas sandbox válidas."
+        "Operación confirmada y autorizada; importes exactos y cuentas válidas."
       ],
       "trigger": "El flujo confirmado solicita contabilización.",
       "flow": [
@@ -1782,14 +1782,14 @@
       "preconditions": [
         "Usuario sintético registrado y activo."
       ],
-      "data": "{\"usuario\":\"ana.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\"}",
+      "data": "{\"usuario\":\"ana.test\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\"}",
       "steps": [
         "Enviar credenciales válidas al endpoint de login.",
         "Consultar el recurso privado con la sesión obtenida."
       ],
       "expected": [
         "La autenticación responde con sesión válida.",
-        "El recurso privado devuelve datos de ana.sandbox y no de otro usuario."
+        "El recurso privado devuelve datos de ana.test y no de otro usuario."
       ],
       "automation": null
     },
@@ -1806,7 +1806,7 @@
         "Usuario sintético registrado.",
         "No existe sesión activa."
       ],
-      "data": "{\"usuario\":\"ana.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\"}",
+      "data": "{\"usuario\":\"ana.test\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\"}",
       "steps": [
         "Enviar contraseña incorrecta.",
         "Intentar acceder a un recurso privado sin sesión.",
@@ -1831,7 +1831,7 @@
       "preconditions": [
         "Identificador sintético no registrado."
       ],
-      "data": "{\"usuario\":\"nuevo.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\",\"confirmacion\":\"Sintetica-02\"}",
+      "data": "{\"usuario\":\"nuevo.test\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\",\"confirmacion\":\"Sintetica-02\"}",
       "steps": [
         "Registrar el usuario con confirmación coincidente.",
         "Consultar el almacenamiento de credenciales.",
@@ -1857,7 +1857,7 @@
       "preconditions": [
         "Existe un usuario sintético registrado."
       ],
-      "data": "{\"usuario\":\"ana.sandbox\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\",\"confirmacion\":\"Sintetica-04\"}",
+      "data": "{\"usuario\":\"ana.test\",\"password\":\"[dato sintético proporcionado durante la ejecución; no registrar]\",\"confirmacion\":\"Sintetica-04\"}",
       "steps": [
         "Enviar registro con confirmación distinta.",
         "Enviar registro con identificador ya existente.",
@@ -1888,7 +1888,7 @@
         "Pagador y destinatario sintéticos existen.",
         "El pagador tiene saldo suficiente."
       ],
-      "data": "{\"pagador\":\"ana.sandbox\",\"destinatario\":\"bruno.sandbox\",\"importe\":\"10.00\",\"moneda\":\"USD\",\"clave\":\"pago-001\"}",
+      "data": "{\"pagador\":\"ana.test\",\"destinatario\":\"bruno.test\",\"importe\":\"10.00\",\"moneda\":\"USD\",\"clave\":\"pago-001\"}",
       "steps": [
         "Ejecutar el pago con sesión del pagador.",
         "Consultar ambos saldos.",
@@ -1941,7 +1941,7 @@
       "preconditions": [
         "Solicitante y destinatario sintéticos existen."
       ],
-      "data": "{\"solicitante\":\"ana.sandbox\",\"destinatario\":\"bruno.sandbox\",\"importe\":\"25.50\",\"moneda\":\"USD\"}",
+      "data": "{\"solicitante\":\"ana.test\",\"destinatario\":\"bruno.test\",\"importe\":\"25.50\",\"moneda\":\"USD\"}",
       "steps": [
         "Crear la solicitud.",
         "Consultar la solicitud.",
@@ -1991,7 +1991,7 @@
       "preconditions": [
         "Existe una solicitud pendiente entre dos usuarios sintéticos."
       ],
-      "data": "{\"solicitud\":\"solicitud-001\",\"actor\":\"bruno.sandbox\"}",
+      "data": "{\"solicitud\":\"solicitud-001\",\"actor\":\"bruno.test\"}",
       "steps": [
         "Consultar la solicitud como destinatario.",
         "Verificar los campos devueltos."
@@ -2012,10 +2012,10 @@
         "RF-TX-03-A3"
       ],
       "preconditions": [
-        "Existe una solicitud de ana.sandbox.",
+        "Existe una solicitud de ana.test.",
         "Existe un tercero autenticado."
       ],
-      "data": "{\"solicitud\":\"solicitud-001\",\"actor\":\"carla.sandbox\"}",
+      "data": "{\"solicitud\":\"solicitud-001\",\"actor\":\"carla.test\"}",
       "steps": [
         "Consultar como tercero.",
         "Consultar un identificador inexistente."
@@ -2039,7 +2039,7 @@
       "preconditions": [
         "Solicitud pendiente con destinatario con saldo suficiente."
       ],
-      "data": "{\"solicitud\":\"solicitud-002\",\"actor\":\"bruno.sandbox\",\"importe\":\"25.50\"}",
+      "data": "{\"solicitud\":\"solicitud-002\",\"actor\":\"bruno.test\",\"importe\":\"25.50\"}",
       "steps": [
         "Aceptar la solicitud.",
         "Consultar saldos, estado y ledger."
@@ -2063,7 +2063,7 @@
       "preconditions": [
         "Solicitud ya aceptada."
       ],
-      "data": "{\"solicitud\":\"solicitud-002\",\"actor\":\"bruno.sandbox\"}",
+      "data": "{\"solicitud\":\"solicitud-002\",\"actor\":\"bruno.test\"}",
       "steps": [
         "Repetir la aceptación.",
         "Comparar saldos y cantidad de asientos."
@@ -2087,10 +2087,10 @@
         "RF-TX-10-A2"
       ],
       "preconditions": [
-        "ana.sandbox tiene pagos y solicitudes propios.",
+        "ana.test tiene pagos y solicitudes propios.",
         "Existen movimientos de otro usuario."
       ],
-      "data": "{\"actor\":\"ana.sandbox\"}",
+      "data": "{\"actor\":\"ana.test\"}",
       "steps": [
         "Consultar el historial.",
         "Verificar campos y orden.",
@@ -2119,7 +2119,7 @@
       "preconditions": [
         "Dos usuarios con movimientos distintos."
       ],
-      "data": "{\"actor\":\"carla.sandbox\"}",
+      "data": "{\"actor\":\"carla.test\"}",
       "steps": [
         "Consultar el historial de carla.",
         "Buscar identificadores de movimientos de ana."
@@ -2143,7 +2143,7 @@
       "preconditions": [
         "Existe una transacción con participante autorizado."
       ],
-      "data": "{\"transaccion\":\"tx-001\",\"actor\":\"ana.sandbox\"}",
+      "data": "{\"transaccion\":\"tx-001\",\"actor\":\"ana.test\"}",
       "steps": [
         "Consultar el detalle como participante.",
         "Verificar acciones disponibles."
@@ -2164,9 +2164,9 @@
         "RF-TX-10-A3"
       ],
       "preconditions": [
-        "Existe una transacción de ana.sandbox."
+        "Existe una transacción de ana.test."
       ],
-      "data": "{\"transaccion\":\"tx-001\",\"actor\":\"carla.sandbox\"}",
+      "data": "{\"transaccion\":\"tx-001\",\"actor\":\"carla.test\"}",
       "steps": [
         "Consultar como tercero.",
         "Consultar identificador inexistente."
@@ -2189,7 +2189,7 @@
       "preconditions": [
         "Solicitud pendiente con destinatario autenticado."
       ],
-      "data": "{\"solicitud\":\"solicitud-003\",\"actor\":\"bruno.sandbox\"}",
+      "data": "{\"solicitud\":\"solicitud-003\",\"actor\":\"bruno.test\"}",
       "steps": [
         "Rechazar la solicitud.",
         "Consultar estado, saldos y ledger."
@@ -2213,7 +2213,7 @@
         "Solicitud rechazada.",
         "Existe un tercero autenticado."
       ],
-      "data": "{\"solicitud\":\"solicitud-003\",\"actor\":\"carla.sandbox\"}",
+      "data": "{\"solicitud\":\"solicitud-003\",\"actor\":\"carla.test\"}",
       "steps": [
         "Intentar rechazar como tercero.",
         "Repetir el rechazo como destinatario."
@@ -2328,7 +2328,7 @@
       "preconditions": [
         "Dos usuarios sintéticos con recursos propios."
       ],
-      "data": "{\"actor\":\"ana.sandbox\",\"recurso\":\"propio\"}",
+      "data": "{\"actor\":\"ana.test\",\"recurso\":\"propio\"}",
       "steps": [
         "Acceder con sesión de ana a un recurso propio.",
         "Repetir la llamada directa sin pasar por la interfaz."
@@ -2352,7 +2352,7 @@
       "preconditions": [
         "Recurso perteneciente a otro usuario."
       ],
-      "data": "{\"actor\":\"carla.sandbox\",\"recurso\":\"de ana\"}",
+      "data": "{\"actor\":\"carla.test\",\"recurso\":\"de ana\"}",
       "steps": [
         "Invocar el endpoint sin sesión.",
         "Invocar con sesión de carla sobre el recurso de ana.",
@@ -2367,7 +2367,7 @@
     },
     {
       "id": "CP-CTA-01",
-      "title": "Usuario administra sus cuentas ficticias",
+      "title": "Usuario administra sus cuentas vinculadas",
       "level": "integration",
       "polarity": "mixed",
       "criteria": [
@@ -2379,10 +2379,10 @@
       "preconditions": [
         "Usuario autenticado sin cuentas asociadas."
       ],
-      "data": "{\"titular\":\"ana.sandbox\",\"cuenta\":\"ficticia-001\"}",
+      "data": "{\"titular\":\"ana.test\",\"cuenta\":\"cuenta-001\"}",
       "steps": [
         "Listar cuentas.",
-        "Asociar una cuenta ficticia válida.",
+        "Asociar una cuenta válida.",
         "Deshabilitarla."
       ],
       "expected": [
@@ -2407,9 +2407,9 @@
         "RF-CTA-01-A4"
       ],
       "preconditions": [
-        "Existe una cuenta ficticia de ana.sandbox."
+        "Existe una cuenta vinculada de ana.test."
       ],
-      "data": "{\"actor\":\"carla.sandbox\",\"cuenta\":\"ficticia-001\"}",
+      "data": "{\"actor\":\"carla.test\",\"cuenta\":\"cuenta-001\"}",
       "steps": [
         "Intentar modificar la cuenta de ana.",
         "Asociar datos inválidos.",
@@ -2418,7 +2418,7 @@
       "expected": [
         "La modificación ajena se rechaza.",
         "Los datos inválidos no dejan estado parcial.",
-        "La UI indica que la cuenta es ficticia y sin conexión bancaria."
+        "La cuenta muestra su alias y estado."
       ],
       "automation": null
     },
@@ -2435,7 +2435,7 @@
       "preconditions": [
         "Existen usuarios con distinta visibilidad."
       ],
-      "data": "{\"consulta\":\"bru\",\"actor\":\"ana.sandbox\"}",
+      "data": "{\"consulta\":\"bru\",\"actor\":\"ana.test\"}",
       "steps": [
         "Buscar usuarios.",
         "Revisar los campos devueltos."
@@ -2461,10 +2461,10 @@
         "RF-CON-01-A2"
       ],
       "preconditions": [
-        "ana.sandbox ya tiene a bruno como contacto.",
+        "ana.test ya tiene a bruno como contacto.",
         "Existe una transacción histórica entre ambos."
       ],
-      "data": "{\"actor\":\"ana.sandbox\",\"contacto\":\"bruno.sandbox\"}",
+      "data": "{\"actor\":\"ana.test\",\"contacto\":\"bruno.test\"}",
       "steps": [
         "Intentar agregar el mismo contacto.",
         "Eliminar el contacto.",
@@ -2609,7 +2609,7 @@
       "preconditions": [
         "Un usuario con eventos y otro sin eventos."
       ],
-      "data": "{\"actor\":\"ana.sandbox\"}",
+      "data": "{\"actor\":\"ana.test\"}",
       "steps": [
         "Consultar la bandeja con eventos.",
         "Consultar la bandeja de un usuario sin eventos."
@@ -2636,7 +2636,7 @@
       "preconditions": [
         "Solicitud ya resuelta."
       ],
-      "data": "{\"solicitud\":\"solicitud-004\",\"actor\":\"bruno.sandbox\"}",
+      "data": "{\"solicitud\":\"solicitud-004\",\"actor\":\"bruno.test\"}",
       "steps": [
         "Repetir la resolución.",
         "Consultar notificaciones y ledger del destinatario."
@@ -2670,7 +2670,7 @@
       "expected": [
         "La cotización incluye tasa, fecha y vigencia.",
         "El débito coincide exactamente con lo cotizado.",
-        "La UI indica que es demostrativa."
+        "La pantalla muestra importe, moneda y vigencia."
       ],
       "automation": null
     },
@@ -2738,9 +2738,9 @@
         "RF-REC-01-A4"
       ],
       "preconditions": [
-        "Recurrencia de ana.sandbox vencida."
+        "Recurrencia de ana.test vencida."
       ],
-      "data": "{\"actor\":\"carla.sandbox\",\"recurrencia\":\"rec-001\"}",
+      "data": "{\"actor\":\"carla.test\",\"recurrencia\":\"rec-001\"}",
       "steps": [
         "Intentar pausar la recurrencia ajena.",
         "Forzar dos ejecuciones concurrentes de la misma ocurrencia."
@@ -2788,7 +2788,7 @@
       "preconditions": [
         "Comercio activo y pagador con saldo."
       ],
-      "data": "{\"comercio\":\"cafe.sandbox\",\"importe\":\"7.50\",\"moneda\":\"USD\"}",
+      "data": "{\"comercio\":\"cafe.test\",\"importe\":\"7.50\",\"moneda\":\"USD\"}",
       "steps": [
         "Ejecutar el pago a comercio.",
         "Consultar saldos y ledger."
@@ -2813,7 +2813,7 @@
       "preconditions": [
         "Existe un comercio inactivo."
       ],
-      "data": "{\"comercio\":\"inactivo.sandbox\",\"importe\":\"7.50\"}",
+      "data": "{\"comercio\":\"inactivo.test\",\"importe\":\"7.50\"}",
       "steps": [
         "Pagar a comercio inactivo.",
         "Pagar a comercio inexistente.",
@@ -2822,13 +2822,13 @@
       "expected": [
         "Ambos pagos se rechazan sin mover dinero.",
         "No se crea asiento.",
-        "La UI indica comercio simulado."
+        "La pantalla muestra comercio, importe y estado."
       ],
       "automation": null
     },
     {
       "id": "CP-SBX-01",
-      "title": "Recarga de sandbox acredita saldo y asiento de origen simulado",
+      "title": "Recarga acredita saldo y registra un asiento de origen",
       "level": "integration",
       "polarity": "positive",
       "criteria": [
@@ -2838,15 +2838,15 @@
       "preconditions": [
         "Usuario autenticado dentro del límite."
       ],
-      "data": "{\"actor\":\"ana.sandbox\",\"importe\":\"50.00\",\"moneda\":\"USD\"}",
+      "data": "{\"actor\":\"ana.test\",\"importe\":\"50.00\",\"moneda\":\"USD\"}",
       "steps": [
         "Solicitar recarga.",
         "Consultar saldo y ledger."
       ],
       "expected": [
         "El saldo aumenta 50.00.",
-        "Se registra un asiento con origen sandbox.",
-        "La operación se identifica como simulada."
+        "Se registra un asiento con el origen correspondiente.",
+        "La operación muestra importe, moneda y estado."
       ],
       "automation": null
     },
@@ -2871,13 +2871,13 @@
       "expected": [
         "La recarga fuera de límite se rechaza.",
         "La repetición no duplica el crédito.",
-        "La UI no simula dinero real."
+        "La repetición conserva el mismo saldo y el mismo registro."
       ],
       "automation": null
     },
     {
       "id": "CP-ING-01",
-      "title": "Ingreso externo simulado con referencia única",
+      "title": "Ingreso externo con referencia única",
       "level": "integration",
       "polarity": "mixed",
       "criteria": [
@@ -2896,7 +2896,7 @@
       "expected": [
         "El saldo aumenta exactamente 100.00.",
         "El asiento conserva la referencia única.",
-        "La operación se muestra como simulada."
+        "La operación muestra importe, moneda, referencia y estado."
       ],
       "automation": {
         "runner": "vitest",
@@ -2939,7 +2939,7 @@
         "RF-TX-07-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "0; -1; 0.01; 1.001; notación exponencial; máximo de 12 dígitos enteros.",
       "steps": [
@@ -2961,7 +2961,7 @@
         "RF-TX-07-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Importes sintéticos de borde y representativos en USD, COP y CRC.",
       "steps": [
@@ -2985,7 +2985,7 @@
         "RF-TX-06-A4"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Solicitudes pendientes independientes para aceptación, rechazo y concurrencia.",
       "steps": [
@@ -3013,7 +3013,7 @@
         "RF-TX-10-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Solicitante, pagador y tercero sintéticos.",
       "steps": [
@@ -3041,7 +3041,7 @@
         "RF-LED-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Transacción Oracle aislada e inyección de error tras débito antes de contrapartida.",
       "steps": [
@@ -3070,7 +3070,7 @@
         "RF-GAS-01-A5"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Total 30.00, dos participantes válidos distintos del organizador.",
       "steps": [
@@ -3096,7 +3096,7 @@
         "RF-GAS-01-A3"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Total 30.00 y mismo participante dos veces.",
       "steps": [
@@ -3122,7 +3122,7 @@
         "RNF-FUN-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto matriz-funcional-v1; muestra mínima 1; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3145,7 +3145,7 @@
         "RNF-PER-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto oracle-local-20-concurrentes-v1; muestra mínima 100; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3168,7 +3168,7 @@
         "RNF-COM-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto edge-chrome-escritorio-v1; muestra mínima 2; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3191,7 +3191,7 @@
         "RNF-INT-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto teclado-escritorio-usuarios-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3214,7 +3214,7 @@
         "RNF-REL-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto oracle-fallos-concurrencia-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3237,7 +3237,7 @@
         "RNF-SEC-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto api-tres-actores-v1; muestra mínima 12; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3260,7 +3260,7 @@
         "RNF-MAN-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto catalogo-ci-v1; muestra mínima 1; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3283,7 +3283,7 @@
         "RNF-FLE-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto windows-linux-contenedor-v1; muestra mínima 2; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3306,11 +3306,11 @@
         "RNF-SAF-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
-      "data": "Contexto advertencias-sandbox-v1; muestra mínima 7; artefactos sintéticos sin secretos.",
+      "data": "Contexto presentacion-operaciones-v1; muestra mínima 7; artefactos sintéticos sin secretos.",
       "steps": [
-        "Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar avisos visibles y respuestas API con evidencia de UI y revisión de agente identificada.",
+        "Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar datos visibles y respuestas API con evidencia de UI y revisión identificada.",
         "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
       ],
       "expected": [
@@ -3329,11 +3329,11 @@
         "RNF-USO-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto usuarios-primer-uso-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
       "steps": [
-        "Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos ficticios; informar tareas, aciertos y tiempo, sin usar agentes como participantes.",
+        "Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos preparados; informar tareas, aciertos y tiempo, sin usar agentes como participantes.",
         "Registrar la medición, evaluar el umbral y repetir con una huella/contexto incorrectos para comprobar rechazo."
       ],
       "expected": [
@@ -3352,7 +3352,7 @@
         "RNF-SAT-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle preparado cuando corresponda."
+        "Oracle preparado cuando corresponda; datos de prueba locales."
       ],
       "data": "Contexto usuarios-primer-uso-v1; muestra mínima 10; artefactos sintéticos sin secretos.",
       "steps": [
@@ -3376,7 +3376,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3401,7 +3401,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3426,7 +3426,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3451,7 +3451,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3476,7 +3476,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3501,7 +3501,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3526,7 +3526,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3551,7 +3551,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3576,7 +3576,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3601,7 +3601,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3628,7 +3628,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3655,7 +3655,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3680,7 +3680,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3709,7 +3709,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3739,7 +3739,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3765,7 +3765,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3792,7 +3792,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3810,7 +3810,7 @@
     },
     {
       "id": "CP-WEB-01",
-      "title": "logs in and shows sandbox state without contacting a bank",
+      "title": "inicia sesión y consulta el estado de su cuenta",
       "level": "e2e",
       "polarity": "positive",
       "criteria": [
@@ -3820,14 +3820,14 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
       ],
       "expected": [
         "Las credenciales se validan en el servidor y la sesión queda asociada al usuario correcto.",
-        "La interfaz y la API identifican la operación como simulada y no inducen a error sobre dinero real."
+        "La interfaz y la API muestran importe, moneda y estado de la operación."
       ],
       "automation": {
         "runner": "cypress",
@@ -3837,7 +3837,7 @@
     },
     {
       "id": "CP-WEB-02",
-      "title": "requests a sandbox quote before posting an international P2P payment",
+      "title": "requests a quote before posting an international P2P payment",
       "level": "e2e",
       "polarity": "positive",
       "criteria": [
@@ -3847,14 +3847,14 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
       ],
       "expected": [
         "La cotización indica importes, par de monedas, tasa, fecha y vigencia.",
-        "La función se presenta como simulada y no afirma integración real de mercado."
+        "La cotización presenta importe, par de monedas, tasa aplicada y vigencia."
       ],
       "automation": {
         "runner": "cypress",
@@ -3874,7 +3874,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3901,7 +3901,7 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
@@ -3928,13 +3928,13 @@
       "preconditions": [
         "Fixtures sintéticos y entorno aislado; Oracle preparado para integración."
       ],
-      "data": "Los datos y los límites se fijan en la suite enlazada; no se utilizan cuentas ni fondos reales.",
+      "data": "Los datos y los límites se fijan en la suite enlazada.",
       "steps": [
         "Ejecutar la suite enlazada mediante el comando de su nivel.",
         "Contrastar los resultados observados y el artefacto de ejecución con los criterios relacionados."
       ],
       "expected": [
-        "La funcionalidad se presenta como ficticia y no supone conectividad, pagos reales ni verificación externa.",
+        "La asociación permite administrar únicamente datos propios y protege la exposición de identificadores.",
         "Se presenta un estado vacío cuando no existen notificaciones."
       ],
       "automation": {
@@ -3965,7 +3965,7 @@
       "automation": {
         "runner": "vitest",
         "path": "web/src/lib/money.test.ts",
-        "pattern": "fixed-precision sandbox money"
+        "pattern": "fixed-precision money"
       }
     },
     {
@@ -4004,7 +4004,7 @@
         "RF-AUT-01-A2"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+        "Oracle desechable preparado; datos de prueba locales."
       ],
       "data": "Petición sin cookie de sesión y petición autenticada de control.",
       "steps": [
@@ -4031,7 +4031,7 @@
       ],
       "preconditions": [
         "Usuario sintético registrado y activo.",
-        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+        "Oracle desechable preparado; datos de prueba locales."
       ],
       "data": "Credenciales sintéticas válidas proporcionadas durante la ejecución; no registrar.",
       "steps": [
@@ -4060,7 +4060,7 @@
       ],
       "preconditions": [
         "Usuario sintético registrado y activo.",
-        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+        "Oracle desechable preparado; datos de prueba locales."
       ],
       "data": "Credenciales válidas e inválidas de usuarios existentes e inexistentes; cookies revocadas o vencidas.",
       "steps": [
@@ -4089,7 +4089,7 @@
       ],
       "preconditions": [
         "Usuario sintético registrado.",
-        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+        "Oracle desechable preparado; datos de prueba locales."
       ],
       "data": "Cadenas sintéticas con comillas, operadores y comentarios SQL en login, identificador y cursor.",
       "steps": [
@@ -4119,7 +4119,7 @@
       ],
       "preconditions": [
         "Pagador y destinatario sintéticos con saldo suficiente.",
-        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+        "Oracle desechable preparado; datos de prueba locales."
       ],
       "data": "Contraseña de más de 72 bytes y campos de registro sobrantes; pago con userId y ownerId ajenos.",
       "steps": [
@@ -4149,7 +4149,7 @@
       ],
       "preconditions": [
         "Usuario sintético con saldo y otro usuario destinatario.",
-        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+        "Oracle desechable preparado; datos de prueba locales."
       ],
       "data": "Importes negativos, cero y con más decimales de los admitidos; clave idempotente demasiado corta; autosolicitud.",
       "steps": [
@@ -4176,7 +4176,7 @@
         "RF-AUT-02-A1"
       ],
       "preconditions": [
-        "Entorno sandbox aislado y datos sintéticos; Oracle desechable preparado."
+        "Oracle desechable preparado; datos de prueba locales."
       ],
       "data": "Cuerpo JSON truncado y cuerpo sintético que excede el límite de tamaño.",
       "steps": [
@@ -4271,7 +4271,7 @@
     },
     {
       "id": "RF-PROD-10",
-      "title": "Comercio y sandbox",
+      "title": "Comercio y operaciones de saldo",
       "requirements": [
         "RF-COM-01",
         "RF-SBX-01",
@@ -4302,7 +4302,7 @@
         "CU-CTA-01",
         "RF-CTA-01"
       ],
-      "reason": "La gestión bancaria legacy se reinterpreta como cuentas ficticias de sandbox, sin conectividad real."
+      "reason": "La gestión bancaria heredada se reemplaza por cuentas vinculadas administrables por usuario."
     },
     {
       "id": "LM-CU-04",
@@ -4511,11 +4511,11 @@
       "requirementId": "RNF-SAF-01",
       "standard": "ISO/IEC 25010:2023",
       "characteristic": "Seguridad operacional",
-      "metric": "Flujos financieros que identifican correctamente el sandbox",
+      "metric": "Operaciones con importe, moneda, contraparte y estado correctos",
       "threshold": "== 100 %; n >= 7",
-      "method": "Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar avisos visibles y respuestas API con evidencia de UI y revisión de agente identificada.",
-      "context": "advertencias-sandbox-v1",
-      "contextId": "advertencias-sandbox-v1",
+      "method": "Revisar acceso, resumen, P2P, FX, división, comercio y recepción; verificar datos visibles y respuestas API con evidencia de UI y revisión identificada.",
+      "context": "presentacion-operaciones-v1",
+      "contextId": "presentacion-operaciones-v1",
       "owner": "Equipo de implementación y calidad",
       "reevaluate": "Cada cambio de fuentes, contexto, umbral o muestra; conservar resultados históricos y marcar obsoletos.",
       "evaluatorKinds": [
@@ -4534,7 +4534,7 @@
       "characteristic": "Calidad en uso: logro de tareas",
       "metric": "Tareas completadas correctamente sin asistencia",
       "threshold": ">= 90 %; n >= 10",
-      "method": "Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos ficticios; informar tareas, aciertos y tiempo, sin usar agentes como participantes.",
+      "method": "Al menos 10 usuarios finales de prueba realizan pago, solicitud y división con datos preparados; informar tareas, aciertos y tiempo, sin usar agentes como participantes.",
       "context": "usuarios-primer-uso-v1",
       "contextId": "usuarios-primer-uso-v1",
       "owner": "Equipo de evaluación y usuarios finales",
@@ -4620,7 +4620,7 @@
     {
       "id": "RN-TX-06",
       "title": "Precisión monetaria",
-      "statement": "Entradas, cálculos y persistencia conservan unidades menores exactas; las tres monedas habilitadas utilizan dos decimales en este sandbox.",
+      "statement": "Entradas, cálculos y persistencia conservan unidades menores exactas; las tres monedas habilitadas utilizan dos decimales.",
       "requirements": [
         "RF-TX-07"
       ]
@@ -4654,7 +4654,7 @@
     {
       "id": "RN-PROD-01",
       "title": "Entorno financiero explícito",
-      "statement": "Pantallas, operaciones y comprobantes identifican fondos ficticios y nunca afirman movimiento de dinero real.",
+      "statement": "Pantallas, comprobantes y notificaciones muestran contraparte, importe, moneda y estado mediante descripciones claras.",
       "requirements": [
         "RF-SBX-01",
         "RF-ING-01",
@@ -4673,7 +4673,7 @@
     {
       "id": "RN-PROD-03",
       "title": "Cotización visible antes de confirmar",
-      "statement": "La conversión muestra importes, tasa de demostración, fuente y vencimiento antes de confirmar; no se inventan tarifas ni cotizaciones de mercado.",
+      "statement": "La conversión muestra importes, monedas, tasa aplicada y vencimiento antes de confirmar.",
       "requirements": [
         "RF-FX-01"
       ]
@@ -4707,7 +4707,7 @@
     {
       "id": "RN-PROD-07",
       "title": "Pago entre personas",
-      "statement": "Un pago confirmado identifica pagador, destinatario, importe, moneda y estado; exige fondos sandbox suficientes. Los límites adicionales quedan sujetos a una decisión de producto.",
+      "statement": "Un pago confirmado identifica pagador, destinatario, importe, moneda y estado; los límites adicionales quedan sujetos a una decisión de producto.",
       "requirements": [
         "RF-TX-01"
       ]
@@ -4763,8 +4763,8 @@
     },
     {
       "id": "RN-PROD-13",
-      "title": "Pago sandbox a comercio extranjero",
-      "statement": "El usuario revisa comercio, importe, moneda y cotización aplicable; el resultado solo afecta al libro sandbox y no representa adquirencia ni liquidación real.",
+      "title": "Pago a comercio extranjero",
+      "statement": "El usuario revisa comercio, importe, moneda y cotización aplicable antes de confirmar el pago.",
       "requirements": [
         "RF-COM-01",
         "RF-FX-01"

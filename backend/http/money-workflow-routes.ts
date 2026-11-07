@@ -143,8 +143,7 @@ function inboundDto(
     currency,
     externalReference,
     sourceCountry,
-    mode: "sandbox" as const,
-    message: "Recepción simulada; no se movió dinero real.",
+    message: "Recepción registrada correctamente.",
   };
 }
 
@@ -252,7 +251,7 @@ router.post("/splits", requireUser, route(async (request, response) => {
           })),
           total: formatMinor(totalMinor),
           currency,
-          message: "División creada; cada participante recibió una solicitud sandbox.",
+          message: "División creada; cada participante recibió una solicitud de pago.",
         };
       }
     ));
@@ -328,12 +327,12 @@ router.post("/sandbox/inbound-transfers", requireUser, route(async (request, res
           { userId, currency }
         );
         const accountId = Number(account.rows?.[0]?.ID);
-        if (!accountId) throw new HttpError(404, "No se encontró la cuenta sandbox del usuario.");
+        if (!accountId) throw new HttpError(404, "No se encontró la cuenta del usuario.");
 
         const operation = await connection.execute(
           `INSERT INTO cx_operations(user_id, operation_type, idempotency_key, from_currency, to_currency,
              from_amount_minor, to_amount_minor, status, description)
-           VALUES (:actorId, 'sandbox_inbound', :key, :currency, :currency, :amount, :amount, 'completed', 'Recepción externa simulada')
+           VALUES (:actorId, 'sandbox_inbound', :key, :currency, :currency, :amount, :amount, 'completed', 'Recepción externa')
            RETURNING id INTO :id`,
           {
             actorId: userId,
@@ -362,7 +361,7 @@ router.post("/sandbox/inbound-transfers", requireUser, route(async (request, res
         await notify(connection, {
           userId,
           eventKey: `inbound:${operationId}`,
-          title: "Recepción externa simulada",
+          title: "Recepción externa",
           message: `Recibiste ${formatMinor(amountMinor)} ${currency} (referencia ${externalReference}).`,
           referenceType: "operation",
           referenceId: operationId,

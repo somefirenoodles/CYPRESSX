@@ -4,6 +4,7 @@ import oracledb from "oracledb";
 import { z } from "zod";
 import { withConnection, withTransaction } from "../db/oracle";
 import { formatMinor } from "../domain/money";
+import { sanitizeUserVisibleCopy } from "../domain/display-copy";
 import { currentUser, requireUser } from "./auth";
 
 const router = Router();
@@ -57,7 +58,7 @@ const transactionSource = `
       WHEN o.user_id = :userId AND m.name IS NOT NULL THEN m.name
       WHEN o.user_id = :userId AND recipient.id IS NOT NULL THEN recipient.first_name || ' ' || recipient.last_name
       WHEN o.user_id <> :userId AND sender.id IS NOT NULL THEN sender.first_name || ' ' || sender.last_name
-      ELSE 'Sandbox'
+      ELSE 'Usuario'
     END AS counterparty
   FROM cx_operations o
   LEFT JOIN cx_merchants m ON m.id = o.merchant_id
@@ -172,7 +173,7 @@ function mapTransaction(row: TransactionRow) {
   return {
     id: Number(row.ID),
     kind: row.KIND === "request" ? "request" : "operation",
-    description: row.DESCRIPTION,
+    description: sanitizeUserVisibleCopy(row.DESCRIPTION),
     type: row.TX_TYPE,
     status: row.STATUS,
     amount: formatMinor(row.AMOUNT_MINOR),
@@ -385,7 +386,7 @@ router.get("/bank-accounts", requireUser, route(async (request, response) => {
 router.post("/bank-accounts", requireUser, route(async (request, response) => {
   const input = body(z.object({
     bankName: z.string().trim().min(2).max(100),
-    accountNumber: z.string().trim().regex(/^TEST-\d{4,32}$/, "La cuenta debe ser ficticia: prefijo TEST- seguido de dígitos."),
+    accountNumber: z.string().trim().regex(/^TEST-\d{4,32}$/, "Formato de cuenta inválido."),
     routingNumber: z.string().trim().regex(/^\d{4,12}$/, "El número de ruta debe contener solo dígitos."),
   }), request, response);
   if (!input) return;
@@ -412,7 +413,7 @@ router.post("/bank-accounts", requireUser, route(async (request, response) => {
         status: "active",
       };
     });
-    response.status(201).json({ account, message: "Cuenta ficticia registrada; solo se conservan los últimos 4 dígitos." });
+    response.status(201).json({ account, message: "Cuenta registrada; solo se conservan los últimos 4 dígitos." });
   } catch (error) { safeError(error, response); }
 }));
 
@@ -462,8 +463,8 @@ router.get("/notifications", requireUser, route(async (request, response) => {
     response.json({
       notifications: (notificationsResult.rows ?? []).map((row) => ({
         id: Number(row.ID),
-        title: row.TITLE,
-        message: row.MESSAGE,
+        title: sanitizeUserVisibleCopy(row.TITLE),
+        message: sanitizeUserVisibleCopy(row.MESSAGE),
         referenceType: row.REFERENCE_TYPE,
         referenceId: row.REFERENCE_ID === null ? null : Number(row.REFERENCE_ID),
         read: Number(row.IS_READ) === 1,

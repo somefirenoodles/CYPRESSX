@@ -37,7 +37,7 @@ export function currencyPair(from: Currency, to: Currency) {
     "CRC:COP": { numerator: 410n, denominator: 51n, displayRate: "8.03921569" },
   };
   const pair = rates[`${from}:${to}`];
-  if (!pair) throw new Error("Ese corredor de cambio no está disponible en el sandbox.");
+  if (!pair) throw new Error("Ese corredor de cambio no está disponible.");
   return pair;
 }
 

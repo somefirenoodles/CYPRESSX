@@ -4,7 +4,7 @@
 
 ## Propósito y estado
 
-Este registro conserva candidatos y defectos para actividades académicas de pruebas y mantenimiento. Los hallazgos DF-001/002 se refieren a la implementación React/lowdb/JSON heredada, que ya no forma parte del camino activo configurado. La API Oracle actual contiene guardas estáticas relacionadas; no se ejecutaron pruebas dinámicas en esta revisión. Se conserva la clasificación original hasta que la tarea explícita de reproducción o regresión aporte evidencia.
+Este registro conserva candidatos y defectos para actividades de pruebas y mantenimiento. Los hallazgos DF-001/002 se refieren a la implementación React/lowdb/JSON heredada, que ya no forma parte del camino activo configurado. La API Oracle actual contiene guardas estáticas relacionadas; no se ejecutaron pruebas dinámicas en esta revisión. Se conserva la clasificación original hasta que la tarea explícita de reproducción o regresión aporte evidencia.
 
 ## DF-001. Rechazar una solicitud modifica saldos
 

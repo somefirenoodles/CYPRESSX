@@ -196,7 +196,7 @@ Línea base ERS-001. Los flujos definen el contrato objetivo; consultar la matri
 
 - El usuario tiene sesión válida.
 
-**Disparador:** El usuario lista, asocia o deshabilita una cuenta ficticia.
+**Disparador:** El usuario lista, asocia o deshabilita una cuenta vinculada.
 
 **Flujo principal:**
 
@@ -209,7 +209,7 @@ Línea base ERS-001. Los flujos definen el contrato objetivo; consultar la matri
 
 - Si la validación falla, no se persiste ningún cambio.
 
-**Éxito:** El usuario administra solo sus cuentas ficticias con datos minimizados.
+**Éxito:** El usuario administra solo sus cuentas vinculadas con datos minimizados.
 
 **Fallo:** Datos inválidos, cuenta ajena o fallo de persistencia se rechazan sin estado parcial.
 
@@ -360,7 +360,7 @@ Línea base ERS-001. Los flujos definen el contrato objetivo; consultar la matri
 1. El servidor valida sesión, comercio, importe y moneda.
 2. El servidor debita al pagador y acredita al comercio.
 3. El servidor registra el asiento en el ledger.
-4. El sistema muestra el resultado como operación simulada.
+4. El sistema muestra el resultado con importe, moneda y estado.
 
 **Alternativas y excepciones:**
 
@@ -370,7 +370,7 @@ Línea base ERS-001. Los flujos definen el contrato objetivo; consultar la matri
 
 **Fallo:** Validación, saldo insuficiente o comercio inválido impiden el movimiento.
 
-## CU-SBX-01 — Realizar operaciones simuladas
+## CU-SBX-01 — Realizar operaciones de saldo
 
 **Actor:** Usuario autenticado. **Requisitos:** RF-SBX-01, RNF-FLE-01, RF-LED-01.
 
@@ -378,39 +378,39 @@ Línea base ERS-001. Los flujos definen el contrato objetivo; consultar la matri
 
 - El usuario tiene sesión válida.
 
-**Disparador:** El usuario solicita una recarga u operación de sandbox.
+**Disparador:** El usuario solicita una recarga de saldo.
 
 **Flujo principal:**
 
 1. El servidor valida sesión y límites.
-2. El servidor acredita el saldo simulado y registra el asiento con origen sandbox.
-3. El sistema identifica la operación como simulada.
+2. El servidor acredita el saldo y registra el asiento de origen correspondiente.
+3. El sistema muestra el importe, la moneda y el estado de la operación.
 
 **Alternativas y excepciones:**
 
 - Un reintento con la misma clave no duplica la recarga.
 
-**Éxito:** El saldo simulado y el ledger reflejan una única operación identificada como sandbox.
+**Éxito:** El saldo y el ledger reflejan una única operación registrada.
 
 **Fallo:** Sin sesión, fuera de límite o con error de persistencia no se acredita saldo.
 
-## CU-ING-01 — Recibir ingreso externo simulado
+## CU-ING-01 — Recibir un ingreso externo
 
-**Actor:** Usuario autenticado o proceso de sandbox. **Requisitos:** RF-TX-08, RF-ING-01, RNF-SAF-01, RF-LED-01.
+**Actor:** Usuario autenticado o servicio de recepción. **Requisitos:** RF-TX-08, RF-ING-01, RNF-SAF-01, RF-LED-01.
 
 **Precondiciones:**
 
 - Existe una referencia externa única.
 - La cuenta destino pertenece al usuario autorizado.
 
-**Disparador:** Se registra un ingreso externo simulado.
+**Disparador:** Se registra un ingreso externo con referencia única.
 
 **Flujo principal:**
 
 1. El servidor valida referencia, importe, moneda y cuenta destino.
 2. El servidor verifica que la referencia no haya sido aplicada.
-3. El servidor acredita el saldo y registra el asiento de origen externo simulado.
-4. El sistema muestra la operación como simulada.
+3. El servidor acredita el saldo y registra el asiento de origen externo.
+4. El sistema muestra el importe, la moneda, la referencia y el estado.
 
 **Alternativas y excepciones:**
 
@@ -427,7 +427,7 @@ Línea base ERS-001. Los flujos definen el contrato objetivo; consultar la matri
 
 **Precondiciones:**
 
-- Operación confirmada y autorizada; importes exactos y cuentas sandbox válidas.
+- Operación confirmada y autorizada; importes exactos y cuentas válidas.
 
 **Disparador:** El flujo confirmado solicita contabilización.
 

@@ -93,7 +93,7 @@ describe.skipIf(!process.env.DB_CONNECT_STRING)("Oracle-backed sandbox API", () 
     });
     await processDueRecurrences();
     const schedules = await payer.get("/api/recurrences").expect(200);
-    expect(schedules.body.recurrences.find((item: { id: number }) => item.id === insufficient.body.recurrence.id)).toMatchObject({ lastRunStatus: "failed", lastError: "Saldo sandbox insuficiente." });
+    expect(schedules.body.recurrences.find((item: { id: number }) => item.id === insufficient.body.recurrence.id)).toMatchObject({ lastRunStatus: "failed", lastError: "Saldo insuficiente." });
     expect(await balance(payer, "USD")).toBe("2490.26");
   }, 30000);
 });
